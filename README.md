@@ -2,6 +2,16 @@
 
 A [Claude Code](https://claude.com/claude-code) skill that turns plain diagrams, like the Mermaid block in a README, into clean ones with a look of their own.
 
+## Quick start
+
+```sh
+claude plugin marketplace add ottuck/diagram-polish
+claude plugin install diagram-polish@diagram-polish
+claude plugin enable diagram-polish@diagram-polish   # only if it shows as disabled
+```
+
+Start a new session and ask: *"turn the Mermaid in the README into an architecture diagram."* Other ways to install, and using the script without Claude, are under [Install](#install).
+
 **Before: Mermaid's default theme**
 
 The look GitHub shows for a Mermaid code block:
