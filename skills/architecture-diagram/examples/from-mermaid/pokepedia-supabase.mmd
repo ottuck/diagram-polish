@@ -1,0 +1,19 @@
+flowchart LR
+  UI["브라우저<br/>RSC 페이지 + client island"]
+  subgraph Vercel["Vercel · hnd1 도쿄"]
+    Pages[페이지 렌더링]
+    Actions[Server Actions<br/>게임 · 프로필 · 병합]
+  end
+  subgraph Supabase["Supabase · 도쿄"]
+    Auth[Auth<br/>익명 · Google]
+    DB[(Postgres<br/>RLS · RPC · pg_cron)]
+    Storage[(Storage<br/>아트워크 · 실루엣 · 아바타)]
+  end
+  PokeAPI[(PokeAPI)] --> Sync[scripts/sync-pokemon<br/>수동 실행]
+  Sync --> DB & Storage
+  UI --> Pages -- publishable key --> DB
+  UI --> Actions -- secret key · RPC --> DB
+  UI -- publishable key · RLS --> DB
+  UI --> Auth
+  UI -- 이미지 --> Storage
+  UI -- "iframe · postMessage" --> Battle["battle.pokepedia.dev<br/>Unity 배틀 게임 (Cloudflare Pages)"]

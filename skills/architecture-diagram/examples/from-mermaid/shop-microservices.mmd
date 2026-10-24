@@ -1,0 +1,34 @@
+flowchart LR
+  subgraph Clients
+    Web[Web storefront - Next.js]
+    Mobile[Mobile app - React Native]
+  end
+  subgraph Backend [Kubernetes cluster]
+    GW[API Gateway - Kong]
+    Auth[Auth service]
+    Catalog[Catalog service]
+    Orders[Order service]
+    Payments[Payment service]
+    Notify[Notification service]
+  end
+  subgraph Data
+    PG1[(Postgres - catalog)]
+    PG2[(Postgres - orders)]
+    Redis[(Redis cache)]
+    Kafka{{Kafka}}
+  end
+  Stripe[Stripe API]
+  Mail[SendGrid]
+  Web --> GW
+  Mobile --> GW
+  GW --> Auth
+  GW --> Catalog
+  GW --> Orders
+  Catalog --> PG1
+  Catalog --> Redis
+  Orders --> PG2
+  Orders -- order.created --> Kafka
+  Kafka --> Payments
+  Kafka --> Notify
+  Payments --> Stripe
+  Notify --> Mail

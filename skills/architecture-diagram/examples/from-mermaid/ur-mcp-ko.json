@@ -1,0 +1,96 @@
+{
+  "title": "UR MCP",
+  "width": 1040,
+  "height": 400,
+  "summary": "AI 클라이언트가 MCP로 서버를 부르면 서버가 UR 검색 모듈을 거쳐 UR 내부 API에서 빈방을 가져옵니다. 이력·감시 모듈이 결과를 SQLite에 기록하고 정해진 시각에 감시 지역을 다시 확인합니다.",
+  "groups": [
+    {
+      "title": "Railway · 프로세스 1개",
+      "x": 340,
+      "y": 40,
+      "w": 620,
+      "h": 255
+    }
+  ],
+  "nodes": [
+    {
+      "id": "ai",
+      "x": 140,
+      "y": 120,
+      "title": "AI 클라이언트",
+      "note": "Claude Code · claude.ai · ChatGPT",
+      "tone": "outside"
+    },
+    {
+      "id": "server",
+      "x": 500,
+      "y": 120,
+      "title": "MCP 서버",
+      "note": "Hono · 인증 · tool 4개"
+    },
+    {
+      "id": "search",
+      "x": 830,
+      "y": 120,
+      "title": "UR 검색",
+      "note": "완주 · 재검증 · 요청 제한"
+    },
+    {
+      "id": "history",
+      "x": 500,
+      "y": 245,
+      "title": "이력·감시",
+      "note": "감시 조건 · 정기 확인"
+    },
+    {
+      "id": "db",
+      "x": 500,
+      "y": 345,
+      "title": "SQLite",
+      "note": "Railway volume"
+    },
+    {
+      "id": "ur",
+      "x": 830,
+      "y": 345,
+      "title": "UR 내부 API",
+      "note": "chintai.r6.ur-net.go.jp",
+      "tone": "outside"
+    }
+  ],
+  "edges": [
+    {
+      "from": "ai",
+      "to": "server",
+      "label": "MCP"
+    },
+    {
+      "from": "server",
+      "to": "search",
+      "label": "검색"
+    },
+    {
+      "from": "server",
+      "to": "history"
+    },
+    {
+      "from": "history",
+      "to": "search",
+      "label": "정기 확인",
+      "dashed": true,
+      "route": "hv",
+      "toOffset": -50
+    },
+    {
+      "from": "history",
+      "to": "db",
+      "both": true
+    },
+    {
+      "from": "search",
+      "to": "ur",
+      "label": "순차 요청",
+      "offset": 40
+    }
+  ]
+}

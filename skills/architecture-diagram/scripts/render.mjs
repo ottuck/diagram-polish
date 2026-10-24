@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Draws a diagram.json as a standalone SVG, and optionally as a 2x PNG.
 //
-//   node render.mjs <diagram.json> [--out <file.svg>] [--png] [--title <name>] [--font-dir <dir>] [--no-system-fonts] [--check]
+//   node render.mjs <diagram.json> [--out <file.svg>] [--png] [--theme sage|blue] [--title <name>] [--font-dir <dir>] [--no-system-fonts] [--check]
 //
 // The SVG needs no dependencies. --png needs @resvg/resvg-js (npm i -D @resvg/resvg-js) and uses the
 // Geist fonts in ../fonts unless --font-dir says otherwise, plus the system fonts for glyphs Geist lacks (Hangul, CJK);
@@ -15,18 +15,32 @@ import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
 
-// ---- Palette (light). A diagram can override single entries with a top-level "colors" object.
-const defaultColors = {
-  background: '#fdfdfb',
-  group: { fill: '#faf7f1', stroke: '#ebe3d6', title: '#71675e' },
-  main: { fill: '#edf5ee', stroke: '#c8d8cb', title: '#344c3b', note: '#5e6f5c' },
-  accent: { fill: '#fbf4e6', stroke: '#ddcfb4', title: '#6f5a39', note: '#806a47' },
-  outside: { fill: '#f3ece1', stroke: '#e0d6c6', title: '#231d18', note: '#6b6158' },
-  solid: { line: '#8c9c90', fill: '#f5f9f5', stroke: '#d8e4d9', text: '#4c6050' },
-  dashed: { line: '#b49b72', fill: '#fbf7ef', stroke: '#e5d9c4', text: '#7d6643' },
+// ---- Palettes (light). "theme" in the JSON, or --theme, picks one; a top-level "colors" object overrides single entries.
+const themes = {
+  // Sage green and sand: the default.
+  sage: {
+    background: '#fdfdfb',
+    group: { fill: '#faf7f1', stroke: '#ebe3d6', title: '#71675e' },
+    main: { fill: '#edf5ee', stroke: '#c8d8cb', title: '#344c3b', note: '#5e6f5c' },
+    accent: { fill: '#fbf4e6', stroke: '#ddcfb4', title: '#6f5a39', note: '#806a47' },
+    outside: { fill: '#f3ece1', stroke: '#e0d6c6', title: '#231d18', note: '#6b6158' },
+    solid: { line: '#8c9c90', fill: '#f5f9f5', stroke: '#d8e4d9', text: '#4c6050' },
+    dashed: { line: '#b49b72', fill: '#fbf7ef', stroke: '#e5d9c4', text: '#7d6643' },
+  },
+  // Cool blue and slate.
+  blue: {
+    background: '#fbfcfe',
+    group: { fill: '#f3f6fb', stroke: '#d9e2ef', title: '#5a6b82' },
+    main: { fill: '#e8f0fb', stroke: '#bfd2ee', title: '#1d3a63', note: '#4f6e96' },
+    accent: { fill: '#eceefb', stroke: '#c9cff0', title: '#3a3f86', note: '#585fa3' },
+    outside: { fill: '#eef1f5', stroke: '#d3dae4', title: '#1c2430', note: '#5d6a7b' },
+    solid: { line: '#7f93ae', fill: '#f2f6fc', stroke: '#d3e0f0', text: '#3d5573' },
+    dashed: { line: '#8b90c6', fill: '#f5f5fd', stroke: '#dadcf2', text: '#545a96' },
+  },
 }
-const mergeColors = (override = {}) =>
-  Object.fromEntries(Object.entries(defaultColors).map(([key, value]) => [key, typeof value === 'string' ? (override[key] ?? value) : { ...value, ...(override[key] ?? {}) }]))
+const THEMES = Object.keys(themes)
+const mergeColors = (theme = 'sage', override = {}) =>
+  Object.fromEntries(Object.entries(themes[theme]).map(([key, value]) => [key, typeof value === 'string' ? (override[key] ?? value) : { ...value, ...(override[key] ?? {}) }]))
 
 // ---- Layout. Font sizes are in diagram units.
 const TEXT = { title: 15, note: 12, label: 12 }
@@ -145,6 +159,7 @@ function validate(d) {
   if (typeof d.summary !== 'string' || !d.summary.trim()) errors.push('"summary" must be a sentence or two')
   if (!Array.isArray(d.nodes) || !d.nodes.length) errors.push('"nodes" must be a non-empty array')
   if (!Array.isArray(d.edges)) errors.push('"edges" must be an array')
+  if (d.theme !== undefined && !THEMES.includes(d.theme)) errors.push(`"theme" must be one of ${THEMES.join(', ')}`)
   if (errors.length) return { errors, warnings: [] }
 
   const ids = new Set()
@@ -213,7 +228,7 @@ const FONT_FAMILY = 'Geist, &quot;Noto Sans KR&quot;, &quot;Malgun Gothic&quot;,
 const xml = (text) => text.replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' })[c])
 
 function svg(name, d) {
-  const color = mergeColors(d.colors)
+  const color = mergeColors(d.theme, d.colors)
   const { boxes, edges } = layoutDiagram(d)
   // Separate start and end heads: resvg doesn't support orient="auto-start-reverse".
   const marker = (id, stroke) =>
@@ -290,9 +305,9 @@ async function png(text, fontDir, systemFonts) {
 const args = process.argv.slice(2)
 const flag = (name) => args.includes(name)
 const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined)
-const input = args.find((a, i) => !a.startsWith('--') && !['--out', '--title', '--font-dir'].includes(args[i - 1]))
+const input = args.find((a, i) => !a.startsWith('--') && !['--out', '--title', '--font-dir', '--theme'].includes(args[i - 1]))
 if (!input || flag('--help')) {
-  console.log('Usage: node render.mjs <diagram.json> [--out <file.svg>] [--png] [--title <name>] [--font-dir <dir>] [--no-system-fonts] [--check]')
+  console.log('Usage: node render.mjs <diagram.json> [--out <file.svg>] [--png] [--theme sage|blue] [--title <name>] [--font-dir <dir>] [--no-system-fonts] [--check]')
   process.exit(input ? 0 : 1)
 }
 
@@ -313,6 +328,12 @@ if (flag('--check')) {
   process.exit(0)
 }
 
+if (option('--theme')) diagram.theme = option('--theme')
+const themeError = diagram.theme !== undefined && !THEMES.includes(diagram.theme)
+if (themeError) {
+  console.error(`error: theme must be one of ${THEMES.join(', ')}`)
+  process.exit(1)
+}
 const name = option('--title') ?? diagram.title ?? basename(input, extname(input))
 const out = resolve(option('--out') ?? `${input.replace(/\.json$/i, '')}.svg`)
 const text = svg(name, diagram)

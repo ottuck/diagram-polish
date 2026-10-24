@@ -1,0 +1,10 @@
+flowchart TB
+  cc["Claude Code<br/>Bearer token"] -->|"POST /mcp"| app
+  web["claude.ai · ChatGPT<br/>사람별 비밀 URL"] -->|"POST /mcp/:token"| app
+  app["src/app.ts<br/>Hono, 인증, 사람 구분"] --> mcp["src/mcp/<br/>tool 4개, stateless, 카드 UI"]
+  mcp --> history["src/history/<br/>이력, 감시 조건, 정기 확인"]
+  mcp --> search
+  history --> search["src/ur/search.ts<br/>page 완주, 불완전하면 실패, 결과 재검증"]
+  history --> db[("SQLite<br/>Railway volume")]
+  search --> client["src/ur/client.ts<br/>순차 전송, 간격, 캐시, 휴식·중단"]
+  client --> ur["UR 내부 Web API<br/>chintai.r6.ur-net.go.jp"]

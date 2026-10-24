@@ -1,0 +1,24 @@
+graph LR
+  subgraph Sources
+    App[Product app events]
+    DB[(Orders DB)]
+  end
+  subgraph AWS
+    Kinesis[Kinesis stream]
+    Lambda[Lambda enrich]
+    S3[(S3 data lake)]
+    Glue[Glue ETL jobs]
+  end
+  Airflow((Airflow schedule))
+  Snowflake[(Snowflake warehouse)]
+  Looker[Looker dashboards]
+  Analysts([Analysts])
+  App -->|events| Kinesis
+  Kinesis --> Lambda
+  Lambda --> S3
+  DB -->|nightly dump| S3
+  Airflow -.->|triggers| Glue
+  S3 --> Glue
+  Glue --> Snowflake
+  Snowflake --> Looker
+  Analysts --> Looker

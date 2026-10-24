@@ -53,7 +53,7 @@ When two arrows between the same pair would carry different labels, merge them a
 
 ## 3. Write `diagram.json`
 
-Put it where the project keeps docs (for example `docs/architecture.json`); the SVG and PNG land next to it. `examples/*.json` has seven diagrams, with their SVG and PNG. A starter:
+Put it where the project keeps docs (for example `docs/architecture.json`); the SVG and PNG land next to it. `examples/` has the diagrams below, each with its SVG and PNG; `examples/from-mermaid/` keeps the Mermaid source next to the diagram made from it (a Korean one, a 14-node one that had to be merged down, a pipeline with a scheduler). A starter:
 
 ```json
 {
@@ -77,6 +77,7 @@ Put it where the project keeps docs (for example `docs/architecture.json`); the 
 ```
 
 ### Canvas and boxes
+- `"theme"` is `sage` (green and sand, the default) or `blue` (cool blue and slate). Keep the default unless the user asks for another look or the project's own colors are blue.
 - Coordinates are SVG pixels. `width` is usually 1000–1080; `height` 360–420, or up to about 480 for three rows.
 - A node's `x`, `y` is the **center** of its box. Height is 68 with a `note` and 52 without. **Width is computed:** `max(120, widest text) + 40`, where text width is about 6.6 per character for the note (12px) and 8.7 for the title (15px bold; capitals and digits are wider). `Polygon · Ethereum · Avalanche` (30 characters) gives about 240. It's an estimate: run `--check` to read the real bounds before you place neighbors.
 - Keep every box at least 20 from the canvas edge (`x + width/2 <= canvas width - 20` for the right-most). Raise `width` or move the node if it is cut off.
@@ -117,6 +118,6 @@ Tell the user where the JSON, SVG and PNG are, which boxes you merged or dropped
 ## Don't
 
 - Don't paste the old Mermaid or an image in place of the diagram.
-- Don't set colors per box or per line; pick `tone`, or override the palette once with a top-level `"colors"` object (same keys as the script's palette) if the user wants a different look.
+- Don't set colors per box or per line; pick `tone`. For another look use `"theme": "blue"`, or override single palette entries once with a top-level `"colors"` object (same keys as the script's palette).
 - Don't draw a component you haven't seen in the code or docs, unless you say it's from the source only.
 - Don't crowd more than about seven boxes into one diagram. Split it, or merge boxes.

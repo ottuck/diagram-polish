@@ -1,0 +1,110 @@
+{
+  "title": "Data pipeline",
+  "theme": "blue",
+  "width": 1080,
+  "height": 410,
+  "summary": "Product events stream through Kinesis and Lambda into an S3 data lake, and the orders database is dumped there nightly. Airflow triggers Glue ETL jobs that load Snowflake, which feeds Looker dashboards for analysts.",
+  "groups": [
+    {
+      "title": "AWS",
+      "x": 300,
+      "y": 30,
+      "w": 470,
+      "h": 340
+    }
+  ],
+  "nodes": [
+    {
+      "id": "src",
+      "x": 120,
+      "y": 135,
+      "title": "Sources",
+      "note": "App events · Orders DB"
+    },
+    {
+      "id": "stream",
+      "x": 400,
+      "y": 135,
+      "title": "Event stream",
+      "note": "Kinesis · Lambda"
+    },
+    {
+      "id": "lake",
+      "x": 670,
+      "y": 135,
+      "title": "Data lake",
+      "note": "S3"
+    },
+    {
+      "id": "glue",
+      "x": 670,
+      "y": 315,
+      "title": "ETL jobs",
+      "note": "AWS Glue"
+    },
+    {
+      "id": "air",
+      "x": 120,
+      "y": 315,
+      "title": "Airflow",
+      "note": "Schedule",
+      "tone": "accent"
+    },
+    {
+      "id": "snow",
+      "x": 940,
+      "y": 315,
+      "title": "Snowflake",
+      "note": "Warehouse",
+      "tone": "outside"
+    },
+    {
+      "id": "look",
+      "x": 940,
+      "y": 135,
+      "title": "Looker",
+      "note": "Dashboards for analysts",
+      "tone": "outside"
+    }
+  ],
+  "edges": [
+    {
+      "from": "src",
+      "to": "stream",
+      "label": "Events"
+    },
+    {
+      "from": "stream",
+      "to": "lake",
+      "label": "Enriched"
+    },
+    {
+      "from": "src",
+      "to": "lake",
+      "label": "Nightly dump",
+      "dashed": true,
+      "route": "vhv",
+      "toOffset": -30,
+      "bend": 78
+    },
+    {
+      "from": "lake",
+      "to": "glue",
+      "offset": 30
+    },
+    {
+      "from": "air",
+      "to": "glue",
+      "label": "Triggers",
+      "dashed": true
+    },
+    {
+      "from": "glue",
+      "to": "snow"
+    },
+    {
+      "from": "snow",
+      "to": "look"
+    }
+  ]
+}

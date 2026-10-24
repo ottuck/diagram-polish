@@ -19,6 +19,57 @@ Ask Claude something like *"turn the Mermaid in the README into an architecture 
 
 The rules live in [`skills/architecture-diagram/SKILL.md`](skills/architecture-diagram/SKILL.md). [`examples/`](skills/architecture-diagram/examples) has seven diagrams with their JSON, SVG and PNG.
 
+## From Mermaid
+
+<details open>
+<summary>The Mermaid in a README</summary>
+
+```mermaid
+graph LR
+  subgraph Sources
+    App[Product app events]
+    DB[(Orders DB)]
+  end
+  subgraph AWS
+    Kinesis[Kinesis stream]
+    Lambda[Lambda enrich]
+    S3[(S3 data lake)]
+    Glue[Glue ETL jobs]
+  end
+  Airflow((Airflow schedule))
+  Snowflake[(Snowflake warehouse)]
+  Looker[Looker dashboards]
+  Analysts([Analysts])
+  App -->|events| Kinesis
+  Kinesis --> Lambda
+  Lambda --> S3
+  DB -->|nightly dump| S3
+  Airflow -.->|triggers| Glue
+  S3 --> Glue
+  Glue --> Snowflake
+  Snowflake --> Looker
+  Analysts --> Looker
+```
+
+</details>
+
+Ten nodes became seven boxes: Kinesis and Lambda merged into one stage, the two sources into one, and the analysts folded into the Looker box's note.
+
+<p align="center">
+  <img src="skills/architecture-diagram/examples/from-mermaid/data-pipeline.png" alt="The pipeline as a diagram: sources feed an event stream and a data lake inside an AWS frame, Glue jobs load Snowflake, Looker reads it, and Airflow triggers the jobs" width="760">
+</p>
+
+More in [`examples/from-mermaid`](skills/architecture-diagram/examples/from-mermaid): a Korean Mermaid for a small server, a 14-node microservice shop merged down to seven boxes, and a Supabase and Next.js app. Each has the `.mmd` source, the `diagram.json`, the SVG and the PNG.
+
+## Themes
+
+`"theme": "sage"` (default) or `"theme": "blue"`, or `--theme blue` on the command line. A top-level `"colors"` object overrides single entries of either.
+
+<p align="center">
+  <img src="skills/architecture-diagram/examples/starter.png" alt="Starter diagram in the sage theme" width="370">
+  <img src="skills/architecture-diagram/examples/starter-blue.png" alt="The same diagram in the blue theme" width="370">
+</p>
+
 ## Install
 
 Copy the skill folder where Claude Code looks for skills:
@@ -45,7 +96,7 @@ node skills/architecture-diagram/scripts/render.mjs diagram.json --png    # also
 node skills/architecture-diagram/scripts/render.mjs diagram.json --check  # validate only
 ```
 
-`--png` needs [`@resvg/resvg-js`](https://github.com/yisibl/resvg-js) in the folder you run it from (`npm i -D @resvg/resvg-js`). It draws with the Geist fonts in `skills/architecture-diagram/fonts`; for Hangul, kana or Han text it also picks a system sans font (Malgun Gothic, Yu Gothic, Apple SD Gothic Neo or Noto Sans CJK). Other options: `--out <file.svg>`, `--title <name>`, `--font-dir <dir>` (extra `.ttf` files), `--no-system-fonts` (the same PNG on every machine). `--check` also lists every box's bounds, which helps when you place neighbors.
+`--theme sage|blue` picks the palette. `--png` needs [`@resvg/resvg-js`](https://github.com/yisibl/resvg-js) in the folder you run it from (`npm i -D @resvg/resvg-js`). It draws with the Geist fonts in `skills/architecture-diagram/fonts`; for Hangul, kana or Han text it also picks a system sans font (Malgun Gothic, Yu Gothic, Apple SD Gothic Neo or Noto Sans CJK). Other options: `--out <file.svg>`, `--title <name>`, `--font-dir <dir>` (extra `.ttf` files), `--no-system-fonts` (the same PNG on every machine). `--check` also lists every box's bounds, which helps when you place neighbors.
 
 ## The JSON
 

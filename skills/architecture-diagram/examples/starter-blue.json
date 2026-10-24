@@ -1,0 +1,64 @@
+{
+  "title": "My App",
+  "theme": "blue",
+  "width": 1000,
+  "height": 380,
+  "summary": "Clients talk to one API server, which keeps data in Postgres and sends mail through a provider.",
+  "groups": [
+    {
+      "title": "One server",
+      "x": 330,
+      "y": 40,
+      "w": 380,
+      "h": 300
+    }
+  ],
+  "nodes": [
+    {
+      "id": "web",
+      "x": 120,
+      "y": 120,
+      "title": "Web app",
+      "note": "React"
+    },
+    {
+      "id": "api",
+      "x": 520,
+      "y": 120,
+      "title": "API",
+      "note": "Node · Fastify"
+    },
+    {
+      "id": "db",
+      "x": 520,
+      "y": 270,
+      "title": "PostgreSQL"
+    },
+    {
+      "id": "mail",
+      "x": 880,
+      "y": 120,
+      "title": "Mail provider",
+      "tone": "outside"
+    }
+  ],
+  "edges": [
+    {
+      "from": "web",
+      "to": "api",
+      "label": "REST",
+      "both": true
+    },
+    {
+      "from": "api",
+      "to": "db",
+      "both": true
+    },
+    {
+      "from": "api",
+      "to": "mail",
+      "label": "Send",
+      "dashed": true
+    }
+  ]
+}

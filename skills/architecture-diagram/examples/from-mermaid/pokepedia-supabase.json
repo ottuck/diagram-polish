@@ -1,0 +1,26 @@
+{
+  "title": "Pokepedia",
+  "width": 1040,
+  "height": 480,
+  "summary": "The browser loads pages from a Next.js app on Vercel and talks to Supabase directly for sign-in and reads, while Server Actions write game state through RPC. A sync script run by hand copies Pokémon data from PokeAPI into Postgres and Storage. The Unity battle runs in an iframe from its own host.",
+  "groups": [{ "title": "Supabase · Tokyo", "x": 720, "y": 60, "w": 300, "h": 340 }],
+  "nodes": [
+    { "id": "player", "x": 100, "y": 220, "title": "Player", "note": "Browser", "tone": "accent" },
+    { "id": "next", "x": 430, "y": 70, "title": "Next.js · Vercel", "note": "Tokyo · pages, Server Actions" },
+    { "id": "pg", "x": 865, "y": 140, "title": "Supabase Postgres", "note": "Auth · RLS · RPC · pg_cron" },
+    { "id": "storage", "x": 865, "y": 330, "title": "Supabase Storage", "note": "Artwork · silhouettes · avatars" },
+    { "id": "pokeapi", "x": 280, "y": 235, "title": "PokeAPI", "tone": "outside" },
+    { "id": "sync", "x": 540, "y": 235, "title": "Sync script", "note": "Run by hand" },
+    { "id": "battle", "x": 430, "y": 410, "title": "Unity battle", "note": "Cloudflare Pages" }
+  ],
+  "edges": [
+    { "from": "player", "to": "next", "label": "Pages", "route": "vh", "fromOffset": -20 },
+    { "from": "next", "to": "pg", "label": "RPC", "route": "hvh", "bend": 660, "toOffset": -24 },
+    { "from": "player", "to": "pg", "label": "Sign-in · RLS", "route": "vh", "fromOffset": 20, "toOffset": 0 },
+    { "from": "player", "to": "storage", "label": "Images", "route": "vh", "fromOffset": 20, "toOffset": 24 },
+    { "from": "player", "to": "battle", "label": "iframe · postMessage", "both": true, "route": "vh", "fromOffset": -20 },
+    { "from": "pokeapi", "to": "sync", "label": "Fetch", "dashed": true },
+    { "from": "sync", "to": "pg", "label": "Data", "dashed": true, "route": "hvh", "bend": 670, "fromOffset": -14, "toOffset": 24, "labelAt": 1 },
+    { "from": "sync", "to": "storage", "label": "Images", "dashed": true, "route": "hvh", "bend": 670, "fromOffset": 14, "toOffset": -24, "labelAt": 1 }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "title": "Shop microservices",
+  "width": 1080,
+  "height": 440,
+  "summary": "Web and mobile clients call a Kong gateway, which routes to the auth, catalog and order services. Catalog and orders use Postgres and Redis; new orders go to Kafka, which feeds the payment service (Stripe) and the notification service (SendGrid).",
+  "groups": [{ "title": "Kubernetes cluster", "x": 270, "y": 40, "w": 540, "h": 360 }],
+  "nodes": [
+    { "id": "clients", "x": 125, "y": 130, "title": "Web · mobile apps", "note": "Next.js · React Native", "tone": "accent" },
+    { "id": "gw", "x": 390, "y": 130, "title": "API Gateway", "note": "Kong" },
+    { "id": "core", "x": 650, "y": 130, "title": "Core services", "note": "Auth · Catalog · Orders" },
+    { "id": "pn", "x": 650, "y": 340, "title": "Payment · Notification", "note": "Kafka consumers" },
+    { "id": "data", "x": 950, "y": 130, "title": "Postgres · Redis", "note": "Catalog · orders · cache" },
+    { "id": "kafka", "x": 950, "y": 240, "title": "Kafka" },
+    { "id": "ext", "x": 950, "y": 340, "title": "Stripe · SendGrid", "note": "Payments · email", "tone": "outside" }
+  ],
+  "edges": [
+    { "from": "clients", "to": "gw" },
+    { "from": "gw", "to": "core" },
+    { "from": "core", "to": "data", "offset": -14 },
+    { "from": "core", "to": "kafka", "label": "order.created", "route": "hvh", "fromOffset": 14, "bend": 840, "labelAt": 1 },
+    { "from": "kafka", "to": "pn", "route": "vhv", "bend": 290 },
+    { "from": "pn", "to": "ext" }
+  ]
+}
