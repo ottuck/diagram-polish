@@ -1,0 +1,19 @@
+sequenceDiagram
+  actor User
+  participant SPA as Web app (React)
+  participant API as API server (FastAPI)
+  participant Auth as Auth0
+  participant DB as Postgres
+  participant Mail as Email service
+  User->>SPA: Open app
+  SPA->>Auth: Redirect to login
+  Auth-->>SPA: Authorization code
+  SPA->>API: Exchange code
+  API->>Auth: Verify code, get tokens
+  Auth-->>API: ID + access tokens
+  API->>DB: Upsert user
+  API-->>SPA: Session cookie
+  SPA->>API: Create report
+  API->>DB: Save report
+  API->>Mail: Queue summary email
+  Mail-->>User: Weekly summary

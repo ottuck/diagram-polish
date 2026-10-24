@@ -219,7 +219,19 @@ function validate(d) {
   const pills = edges.filter((e) => e.label).map((e) => ({ id: `${e.from} → ${e.to}`, x0: e.label.x - e.label.w / 2, x1: e.label.x + e.label.w / 2, y0: e.label.y - 11, y1: e.label.y + 11 }))
   for (const p of pills) for (const b of boxes) if (hit(p, rect(b))) warnings.push(`the label on ${p.id} touches box "${b.id}"`)
   for (let i = 0; i < pills.length; i++) for (let j = i + 1; j < pills.length; j++) if (hit(pills[i], pills[j])) warnings.push(`the labels on ${pills[i].id} and ${pills[j].id} overlap`)
-  return { errors, warnings: [...new Set(warnings)], boxes }
+  // A label across a group's border is only a note (it is often fine); a line that leaves the canvas is a warning.
+  const notes = []
+  for (const g of d.groups ?? []) {
+    const gr = { x0: g.x, y0: g.y, x1: g.x + g.w, y1: g.y + g.h }
+    for (const p of pills) {
+      const inside = p.x0 >= gr.x0 && p.x1 <= gr.x1 && p.y0 >= gr.y0 && p.y1 <= gr.y1
+      if (hit(p, gr) && !inside) notes.push(`the label on ${p.id} sits across the border of group "${g.title}"; if it looks cramped there, move it with labelAt`)
+    }
+  }
+  for (const e of edges) {
+    if (e.points.some(([x, y]) => x < 0 || x > d.width || y < 0 || y > d.height)) warnings.push(`the line ${e.from} → ${e.to} leaves the canvas (offsets are relative to a box's center, only bend is an absolute coordinate)`)
+  }
+  return { errors, warnings: [...new Set(warnings)], notes: [...new Set(notes)], boxes }
 }
 
 // ---- SVG
@@ -318,9 +330,10 @@ try {
   console.error(`Could not read ${input}: ${error.message}`)
   process.exit(1)
 }
-const { errors, warnings, boxes } = validate(diagram)
+const { errors, warnings, notes = [], boxes } = validate(diagram)
 for (const e of errors) console.error(`error: ${e}`)
 for (const w of warnings) console.warn(`warning: ${w}`)
+for (const n of notes) console.warn(`note: ${n}`)
 if (errors.length) process.exit(1)
 if (flag('--check')) {
   for (const b of boxes) console.log('  ' + b.id + ': x ' + Math.round(b.x0) + '–' + Math.round(b.x0 + b.w) + ', y ' + Math.round(b.y0) + '–' + Math.round(b.y0 + b.h) + ' (' + Math.round(b.w) + '×' + b.h + ')')

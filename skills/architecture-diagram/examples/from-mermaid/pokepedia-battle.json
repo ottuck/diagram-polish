@@ -1,0 +1,26 @@
+{
+  "title": "Pokepedia Battle",
+  "width": 1040,
+  "height": 410,
+  "summary": "Pokepedia's quiz feeds a sticker collection kept in Supabase, and the battle page embeds the Unity game in an iframe. The two sides exchange messages with postMessage; the game reads artwork from Supabase by public URL.",
+  "groups": [
+    { "title": "pokepedia.dev · Next.js · Vercel", "x": 30, "y": 30, "w": 280, "h": 350 },
+    { "title": "battle.pokepedia.dev · Cloudflare Pages", "x": 730, "y": 30, "w": 290, "h": 350 }
+  ],
+  "nodes": [
+    { "id": "quiz", "x": 170, "y": 100, "title": "Quiz" },
+    { "id": "sticker", "x": 170, "y": 210, "title": "Sticker collection" },
+    { "id": "page", "x": 170, "y": 320, "title": "Battle page" },
+    { "id": "db", "x": 540, "y": 210, "title": "Supabase", "note": "Postgres · Storage" },
+    { "id": "unity", "x": 875, "y": 110, "title": "Unity WebGL", "note": "Battle" },
+    { "id": "shell", "x": 875, "y": 320, "title": "Web template", "note": "Loading · title · VS" }
+  ],
+  "edges": [
+    { "from": "quiz", "to": "sticker" },
+    { "from": "sticker", "to": "page" },
+    { "from": "sticker", "to": "db", "label": "Stickers", "both": true },
+    { "from": "page", "to": "shell", "label": "iframe · postMessage", "both": true, "offset": 10 },
+    { "from": "shell", "to": "db", "label": "Artwork", "dashed": true, "route": "hvh", "fromOffset": -14, "bend": 690, "labelAt": 1 },
+    { "from": "shell", "to": "unity", "label": "Loads", "both": true }
+  ]
+}

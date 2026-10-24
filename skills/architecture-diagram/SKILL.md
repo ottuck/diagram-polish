@@ -12,21 +12,24 @@ node <this skill's folder>/scripts/render.mjs <diagram.json> [--png] [--check] [
 ```
 
 - The SVG needs no dependencies.
-- `--png` needs `@resvg/resvg-js`, looked up from the folder you run the command in (`npm i -D @resvg/resvg-js` there). The PNG uses the Geist fonts in `fonts/`. If the text has Hangul, kana or Han characters, it also picks a system sans font (Malgun Gothic, Yu Gothic, Apple SD Gothic Neo or Noto Sans CJK); bold may not apply to those characters. `--font-dir <dir>` adds your own `.ttf` files, and `--no-system-fonts` makes the PNG identical on every machine.
+- The script runs from any folder. Only `--png` cares where you are: it needs `@resvg/resvg-js`, looked up from the folder you run the command in (`npm i -D @resvg/resvg-js` there). The PNG uses the Geist fonts in `fonts/`. If the text has Hangul, kana or Han characters, it also picks a system sans font (Malgun Gothic, Yu Gothic, Apple SD Gothic Neo or Noto Sans CJK); bold may not apply to those characters. `--font-dir <dir>` adds your own `.ttf` files, and `--no-system-fonts` makes the PNG identical on every machine.
 - `--check` validates, prints every box's bounds (use them to place neighbors) and the warnings, and writes nothing.
 
 ## 1. Read the source
 
 - Take the system's shape from what exists: the README's Mermaid, `docs/`, the user's description, a pasted picture. Keep *what talks to what*; drop how the old drawing happened to look.
 - Check it against the code before you draw. Look at dependency files (`package.json`, `build.gradle`, `pyproject.toml`), config, and the code that stores, sends and receives data. Do not draw a component that only the old picture has. For a repo you don't have locally, `gh repo clone <owner>/<repo> <scratch dir> -- --depth 1` is enough; read-only, and delete the clone afterwards.
-- **If there is no code to check**, say so in the hand-over and list what you took from the source on trust.
+- Check the **direction** of every arrow too. Mermaid arrows are often one-way where the code talks both ways (a page posts a message, the embedded app answers), or point the wrong way.
+- **If there is no code to check**, say so in the hand-over and list what you took from the source on trust, one line is enough.
+- A Mermaid link without an arrowhead (`---`) still needs a direction here: use `both: true` with a short label, or a one-way arrow, whichever the code shows.
+- **Sequence diagrams** are ordered in time and this format has no time axis. Keep who talks to whom, fold each request and its response into one `both: true` arrow, shorten the messages into a label of 1–3 words, and tell the user the order was dropped. A person who only starts and ends the story becomes an `accent` box.
 - Look at one or two of `examples/` for style. Don't copy a diagram that merely resembles yours.
 
 ## 2. Reduce it to 5–7 boxes
 
 People and outside services count toward the 5–7; group frames don't.
 
-Merge in this order until you're in range (if the source is already in range, keep its structure):
+Merge in this order until you're in range. If the source is already in 5–7, don't merge at all, even where a rule below would apply:
 
 1. Pieces that ship from one codebase: iOS app + web app → `Expo app`, note `iPhone · web`.
 2. Several services of one vendor, or things at the same stage: Kinesis + Lambda → `Event stream`, note `Kinesis · Lambda`; Auth + DB of one backend platform → one box.
@@ -41,10 +44,10 @@ When two arrows between the same pair would carry different labels, merge them a
 | Tone: `main` for what the project runs, including managed services in its own cloud account (S3, Kinesis, a database) | `Spring WebFlux`, `Data lake` |
 | `outside` for services in someone else's account | Firebase Auth, Stripe, a SaaS warehouse, a third-party API |
 | `accent` for people and triggers (schedulers, cron, a browser acting as the user) | `You`, `Airflow` |
-| A `groups` frame for boxes that run in one place and can sit side by side. Groups are plain rectangles: boxes that don't belong must sit outside it, and if the layout won't allow that, drop the frame | `Sydney`, `One process`, `Your phone` |
+| A `groups` frame for boxes that run in one place and can sit side by side. Groups are plain rectangles: boxes that don't belong must sit outside it, and if the layout won't allow that, drop the frame. The frame's title may carry the host and the technology | `Sydney`, `One process`, `Your phone`, `battle.example.dev · Cloudflare Pages` |
 | `title` is the name, `note` is the technology or host in one line | `Spring WebFlux` / `AWS Lightsail` |
 | One arrow per pair of boxes and direction | two sign-in arrows → one `Sign-in` |
-| `both: true` for two-way, `dashed: true` for scheduled or asynchronous | `Scheduled checks` |
+| `both: true` for two-way (both ends get the same arrowhead, so it doesn't show who asks and who answers), `dashed: true` for scheduled or asynchronous | `Scheduled checks` |
 | Labels are 1–3 words, never sentences | `REST · WebSocket`, `Verify tokens` |
 
 `summary` is one sentence, two at most (about 35 words total), telling the flow in words. It is stored with the diagram and used as its description for screen readers. Write plainly; no marketing words.
@@ -82,6 +85,7 @@ Put it where the project keeps docs (for example `docs/architecture.json`); the 
 - A node's `x`, `y` is the **center** of its box. Height is 68 with a `note` and 52 without. **Width is computed:** `max(120, widest text) + 40`, where text width is about 6.6 per character for the note (12px) and 8.7 for the title (15px bold; capitals and digits are wider). `Polygon · Ethereum · Avalanche` (30 characters) gives about 240. It's an estimate: run `--check` to read the real bounds before you place neighbors.
 - Keep every box at least 20 from the canvas edge (`x + width/2 <= canvas width - 20` for the right-most). Raise `width` or move the node if it is cut off.
 - Columns 300–400 apart and rows about 150 apart. Let the flow run left to right; put outside services at the top, bottom or far right.
+- A box with four neighbors (an API in the middle) works best as the hub: put it in the center and the neighbors on its four sides, so each line is straight.
 - With 6–7 boxes in a flow, don't squeeze one row: wrap it into a two-row loop (top row left to right, down the right side, bottom row right to left), and put side inputs such as a scheduler on the open row.
 - When two sources both feed two targets, the lines cross unless one source sits between them. Place boxes so that no line has to cross another, even if that costs a row.
 
@@ -97,18 +101,18 @@ The route is chosen for you: `h` when the two boxes overlap vertically, `v` when
 | `v` | top or bottom, facing `to` | the opposite side | `offset` moves the line in x |
 | `hvh` | left or right side, **the one facing `bend`** (default: toward `to`) | left or right side facing `bend` | `bend` is the **x** of the vertical run; `fromOffset`, `toOffset` slide the ends in y |
 | `vhv` | top or bottom, **the one facing `bend`** | top or bottom facing `bend` | `bend` is the **y** of the horizontal run; the offsets slide the ends in x |
-| `hv` | side facing `to` | top or bottom of `to` | `fromOffset` is y of the line, `toOffset` is x of the arrival |
-| `vh` | top or bottom, facing `to` | left or right side of `to` | `fromOffset` is x of the departure, `toOffset` is y of the line |
+| `hv` | side facing `to` | top or bottom of `to` | `fromOffset` is the y of the line and `toOffset` the x of the arrival, both **relative to the box centers** (0 = centered) |
+| `vh` | top or bottom, facing `to` | left or right side of `to` | `fromOffset` is the x of the departure and `toOffset` the y of the line, both **relative to the box centers** |
 
 - **To go around boxes**, put `bend` beyond them: between two boxes in one row, `vhv` with a `bend` above both boxes leaves the top of one and arrives at the top of the other. A `bend` between the boxes gives the usual shape.
-- `bend` is an absolute canvas coordinate. Offsets are in pixels (negative is up or left).
+- **Only `bend` is an absolute canvas coordinate.** `offset`, `fromOffset` and `toOffset` are pixels relative to a box's center (negative is up or left): `0` means centered and `±14` is a small nudge.
 - A box side that has an incoming and an outgoing line, or two lines, needs different offsets (for example `-14` and `14`), or the lines meet at one point and look like one.
-- `labelAt` picks the segment that carries the label (0 is the first); the default is the longest. A label pill is as wide as its text plus 22. If the longest segment is shorter than that, move the label with `labelAt` or give the segment more room. Prefer labels that sit fully inside or fully outside a group frame, not across its border.
+- `labelAt` picks the segment that carries the label, counted from the `from` end (0 is the first); the default is the longest. When the long horizontal segment crosses a frame border, put the label on a vertical one. A label pill is as wide as its text plus 22. If the longest segment is shorter than that, move the label with `labelAt` or give the segment more room. Prefer labels that sit fully inside or fully outside a group frame, not across its border.
 
 ## 4. Render and look
 
-1. `node <skill>/scripts/render.mjs docs/architecture.json --png`. The script **stops on errors** (an edge to a box that doesn't exist, a bad route, missing fields) and **prints warnings**: a box cut off by the canvas, overlapping boxes, a box crossing a group's edge or covering its title, a line passing through a box (including its own start or end box, which means it left or arrived on the wrong side), a label touching a box or another label.
-2. **Open the PNG (or the SVG) and look at it.** Warnings don't catch everything. Check that every arrowhead is visible and sits on a box edge (both ends for `both`), that two lines don't meet at one point, that the labels are on the right lines, and that the picture reads left to right without a legend. For Hangul/CJK text, check for empty boxes in place of letters.
+1. `node <skill>/scripts/render.mjs docs/architecture.json --png`. The script **stops on errors** (an edge to a box that doesn't exist, a bad route, missing fields) and **prints warnings**: a box cut off by the canvas, overlapping boxes, a box crossing a group's edge or covering its title, a line passing through a box (including its own start or end box, which means it left or arrived on the wrong side), a line leaving the canvas, a label touching a box or another label. A label across a group's border is only a *note*: it is often fine, look at it.
+2. **Open the PNG (or the SVG) and look at it.** Warnings don't catch everything, and nothing checks which way an arrowhead points. Check that every arrowhead is visible and sits on a box edge (both ends for `both`), that two lines don't meet at one point, that the labels are on the right lines, and that the picture reads left to right without a legend. For Hangul/CJK text, check for empty boxes in place of letters.
 3. Fix and render again until there are no warnings and the picture is clean.
 
 ## 5. Hand over

@@ -1,0 +1,24 @@
+{
+  "title": "Login flow",
+  "theme": "blue",
+  "width": 1000,
+  "height": 460,
+  "summary": "The web app sends the user to Auth0 to sign in, and the API server verifies the login with Auth0. The API stores users and reports in Postgres and queues a weekly summary email through the email service.",
+  "nodes": [
+    { "id": "user", "x": 130, "y": 100, "title": "You", "tone": "accent" },
+    { "id": "web", "x": 480, "y": 100, "title": "Web app", "note": "React" },
+    { "id": "auth", "x": 830, "y": 250, "title": "Auth0", "note": "Sign-in", "tone": "outside" },
+    { "id": "api", "x": 480, "y": 250, "title": "API server", "note": "FastAPI" },
+    { "id": "mail", "x": 130, "y": 250, "title": "Email service", "tone": "outside" },
+    { "id": "db", "x": 480, "y": 400, "title": "Postgres" }
+  ],
+  "edges": [
+    { "from": "user", "to": "web", "label": "Open app" },
+    { "from": "web", "to": "auth", "label": "Login", "both": true, "route": "hv", "fromOffset": 0, "toOffset": 0 },
+    { "from": "web", "to": "api", "label": "REST", "both": true },
+    { "from": "api", "to": "auth", "label": "Verify", "both": true },
+    { "from": "api", "to": "db", "label": "Users · reports", "both": true },
+    { "from": "api", "to": "mail", "label": "Queue email", "dashed": true },
+    { "from": "mail", "to": "user", "label": "Weekly summary", "dashed": true }
+  ]
+}

@@ -27,7 +27,7 @@ cp -r skills/architecture-diagram ~/.claude/skills/         # every project
 cp -r skills/architecture-diagram <project>/.claude/skills/ # one project
 ```
 
-Start a new session, then ask: *"turn the Mermaid in the README into an architecture diagram."* The repo also has a plugin manifest for `/plugin marketplace add`; that route is untested.
+Start a new session, then ask: *"turn the Mermaid in the README into an architecture diagram."* The repo is also a plugin marketplace: `claude plugin marketplace add <owner>/architecture-diagram-skill`, then `claude plugin install architecture-diagram-skill@architecture-diagram-skill`. The manifests follow the plugin docs but have not been run through `claude plugin validate` yet.
 
 ## Use the script alone
 
@@ -48,7 +48,7 @@ Options: `--theme sage|blue`, `--out`, `--title`, `--font-dir`, `--no-system-fon
 
 ## More examples
 
-[`examples/from-mermaid`](skills/architecture-diagram/examples/from-mermaid) has four Mermaid sources with the diagram made from each: a Korean one, a 14-node shop merged down to seven boxes, a Supabase and Next.js app, and the pipeline above. [`examples/`](skills/architecture-diagram/examples) has six more, from the author's own projects.
+[`examples/from-mermaid`](skills/architecture-diagram/examples/from-mermaid) has six Mermaid sources with the diagram made from each: a Korean one, a 14-node shop merged down to seven boxes, a Supabase and Next.js app, a Unity WebGL game embedded in a web app, a login flow written as a *sequence* diagram (in the blue theme), and the pipeline above. [`examples/`](skills/architecture-diagram/examples) has six more, from the author's own projects.
 
 ## Notes
 

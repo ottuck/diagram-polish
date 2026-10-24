@@ -1,0 +1,16 @@
+flowchart LR
+    subgraph web["pokepedia.dev · Next.js / Vercel"]
+        direction TB
+        quiz["Quiz"] --> sticker["Sticker collection"] --> page["Battle page"]
+    end
+
+    db[("Supabase")]
+
+    subgraph game["battle.pokepedia.dev · Cloudflare Pages"]
+        direction TB
+        shell["Web template<br/>loading · title · VS screens"] --- unity["Unity WebGL<br/>battle"]
+    end
+
+    sticker <--> db
+    page -- "iframe<br/>postMessage" --> shell
+    shell -. "official artwork (public URL)" .-> db
