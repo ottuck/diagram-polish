@@ -8,11 +8,12 @@ description: Turn a project's architecture (a Mermaid block in a README, a scree
 You describe the system as boxes and arrows in `diagram.json`; `scripts/render.mjs` computes box sizes and line routes and draws a standalone SVG (and optionally a 2x PNG). Nothing is drawn by hand and no colors are chosen: boxes only pick a `tone`.
 
 ```
-node <this skill's folder>/scripts/render.mjs <diagram.json> [--png] [--check] [--out <file.svg>] [--title <name>]
+node <this skill's folder>/scripts/render.mjs <diagram.json> [--png] [--dark | --both | --auto] [--check] [--out <file.svg>] [--theme sage|blue] [--title <name>]
 ```
 
 - The SVG needs no dependencies.
 - The script runs from any folder. Only `--png` cares where you are: it needs `@resvg/resvg-js`, looked up from the folder you run the command in (`npm i -D @resvg/resvg-js` there). The PNG uses the Geist fonts in `fonts/`. If the text has Hangul, kana or Han characters, it also picks a system sans font (Malgun Gothic, Yu Gothic, Apple SD Gothic Neo or Noto Sans CJK); bold may not apply to those characters. `--font-dir <dir>` adds your own `.ttf` files, and `--no-system-fonts` makes the PNG identical on every machine.
+- `--dark` draws the dark palette (`<name>-dark.svg`); `--both` writes the light and the dark file; `--auto` writes one SVG that follows the OS light/dark setting (its PNG is the light one; not combinable with the other two).
 - `--check` validates, prints every box's bounds (use them to place neighbors) and the warnings, and writes nothing.
 
 ## 1. Read the source
@@ -117,11 +118,11 @@ The route is chosen for you: `h` when the two boxes overlap vertically, `v` when
 
 ## 5. Hand over
 
-Tell the user where the JSON, SVG and PNG are, which boxes you merged or dropped, and anything you couldn't verify. If it's for a README, add `![Architecture](docs/architecture.svg)` (GitHub shows SVG in `<img>`). If the user's site renders this JSON format, put the JSON (without `title`) where they say. Don't commit or push unless the user asked.
+Tell the user where the JSON, SVG and PNG are, which boxes you merged or dropped, and anything you couldn't verify. If it's for a README, render with `--both` and add a `<picture>` so GitHub shows the file that matches the reader's theme: `<picture><source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.svg"><img src="docs/architecture.svg" alt="Architecture"></picture>`. Use `--auto` instead only when the SVG is opened on its own or inlined on a page without its own light/dark toggle (an `<img>` follows the OS, not a site's switch). If the user's site renders this JSON format, put the JSON (without `title`) where they say. Don't commit or push unless the user asked.
 
 ## Don't
 
 - Don't paste the old Mermaid or an image in place of the diagram.
-- Don't set colors per box or per line; pick `tone`. For another look use `"theme": "blue"`, or override single palette entries once with a top-level `"colors"` object (same keys as the script's palette).
+- Don't set colors per box or per line; pick `tone`. For another look use `"theme": "blue"`, or override single palette entries once with a top-level `"colors"` object (`"colorsDark"` for the dark palette; same keys as the script's palette).
 - Don't draw a component you haven't seen in the code or docs, unless you say it's from the source only.
 - Don't crowd more than about seven boxes into one diagram. Split it, or merge boxes.

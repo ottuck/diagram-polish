@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // Draws a diagram.json as a standalone SVG, and optionally as a 2x PNG.
 //
-//   node render.mjs <diagram.json> [--out <file.svg>] [--png] [--theme sage|blue] [--title <name>] [--font-dir <dir>] [--no-system-fonts] [--check]
+//   node render.mjs <diagram.json> [--out <file.svg>] [--png] [--theme sage|blue] [--dark | --both | --auto] [--title <name>] [--font-dir <dir>] [--no-system-fonts] [--check]
 //
+// --dark draws the dark palette (<name>-dark.svg), --both writes the light and the dark file, --auto writes one SVG
+// that follows the OS light/dark setting through prefers-color-scheme (the PNG of it is the light one).
 // The SVG needs no dependencies. --png needs @resvg/resvg-js (npm i -D @resvg/resvg-js) and uses the
 // Geist fonts in ../fonts unless --font-dir says otherwise, plus the system fonts for glyphs Geist lacks (Hangul, CJK);
 // --no-system-fonts turns that off so the PNG is identical on every machine. --check validates, lists each box's
@@ -15,32 +17,55 @@ import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
 
-// ---- Palettes (light). "theme" in the JSON, or --theme, picks one; a top-level "colors" object overrides single entries.
+// ---- Palettes. "theme" in the JSON, or --theme, picks one; each has a light and a dark variant. A top-level
+// "colors" object overrides single entries of the light palette, "colorsDark" those of the dark one.
 const themes = {
   // Sage green and sand: the default.
   sage: {
-    background: '#fdfdfb',
-    group: { fill: '#faf7f1', stroke: '#ebe3d6', title: '#71675e' },
-    main: { fill: '#edf5ee', stroke: '#c8d8cb', title: '#344c3b', note: '#5e6f5c' },
-    accent: { fill: '#fbf4e6', stroke: '#ddcfb4', title: '#6f5a39', note: '#806a47' },
-    outside: { fill: '#f3ece1', stroke: '#e0d6c6', title: '#231d18', note: '#6b6158' },
-    solid: { line: '#8c9c90', fill: '#f5f9f5', stroke: '#d8e4d9', text: '#4c6050' },
-    dashed: { line: '#b49b72', fill: '#fbf7ef', stroke: '#e5d9c4', text: '#7d6643' },
+    light: {
+      background: '#fdfdfb',
+      group: { fill: '#faf7f1', stroke: '#ebe3d6', title: '#71675e' },
+      main: { fill: '#edf5ee', stroke: '#c8d8cb', title: '#344c3b', note: '#5e6f5c' },
+      accent: { fill: '#fbf4e6', stroke: '#ddcfb4', title: '#6f5a39', note: '#806a47' },
+      outside: { fill: '#f3ece1', stroke: '#e0d6c6', title: '#231d18', note: '#6b6158' },
+      solid: { line: '#8c9c90', fill: '#f5f9f5', stroke: '#d8e4d9', text: '#4c6050' },
+      dashed: { line: '#b49b72', fill: '#fbf7ef', stroke: '#e5d9c4', text: '#7d6643' },
+    },
+    dark: {
+      background: '#151916',
+      group: { fill: '#1b201c', stroke: '#323a33', title: '#a39f94' },
+      main: { fill: '#1f2e24', stroke: '#36503c', title: '#d3e8d6', note: '#9bb59f' },
+      accent: { fill: '#2c2819', stroke: '#5a4d2d', title: '#ebd9a9', note: '#bfa97a' },
+      outside: { fill: '#26231e', stroke: '#453d32', title: '#f0e9df', note: '#a89d8f' },
+      solid: { line: '#7f9984', fill: '#1b2a1f', stroke: '#34503a', text: '#b6cdb9' },
+      dashed: { line: '#b79c6a', fill: '#29231a', stroke: '#55472b', text: '#d2bb8c' },
+    },
   },
   // Cool blue and slate.
   blue: {
-    background: '#fbfcfe',
-    group: { fill: '#f3f6fb', stroke: '#d9e2ef', title: '#5a6b82' },
-    main: { fill: '#e8f0fb', stroke: '#bfd2ee', title: '#1d3a63', note: '#4f6e96' },
-    accent: { fill: '#eceefb', stroke: '#c9cff0', title: '#3a3f86', note: '#585fa3' },
-    outside: { fill: '#eef1f5', stroke: '#d3dae4', title: '#1c2430', note: '#5d6a7b' },
-    solid: { line: '#7f93ae', fill: '#f2f6fc', stroke: '#d3e0f0', text: '#3d5573' },
-    dashed: { line: '#8b90c6', fill: '#f5f5fd', stroke: '#dadcf2', text: '#545a96' },
+    light: {
+      background: '#fbfcfe',
+      group: { fill: '#f3f6fb', stroke: '#d9e2ef', title: '#5a6b82' },
+      main: { fill: '#e8f0fb', stroke: '#bfd2ee', title: '#1d3a63', note: '#4f6e96' },
+      accent: { fill: '#eceefb', stroke: '#c9cff0', title: '#3a3f86', note: '#585fa3' },
+      outside: { fill: '#eef1f5', stroke: '#d3dae4', title: '#1c2430', note: '#5d6a7b' },
+      solid: { line: '#7f93ae', fill: '#f2f6fc', stroke: '#d3e0f0', text: '#3d5573' },
+      dashed: { line: '#8b90c6', fill: '#f5f5fd', stroke: '#dadcf2', text: '#545a96' },
+    },
+    dark: {
+      background: '#0f141b',
+      group: { fill: '#151c26', stroke: '#263247', title: '#8fa2bd' },
+      main: { fill: '#17263d', stroke: '#2f4a73', title: '#d3e3fb', note: '#8aa8d1' },
+      accent: { fill: '#1d2140', stroke: '#3a4180', title: '#d3d7fb', note: '#9aa0e0' },
+      outside: { fill: '#1b222c', stroke: '#313c4b', title: '#e8edf4', note: '#93a1b4' },
+      solid: { line: '#6f86a6', fill: '#14233a', stroke: '#2c4468', text: '#b5cae6' },
+      dashed: { line: '#8a8fd0', fill: '#1a1d38', stroke: '#363a73', text: '#b7bbf0' },
+    },
   },
 }
 const THEMES = Object.keys(themes)
-const mergeColors = (theme = 'sage', override = {}) =>
-  Object.fromEntries(Object.entries(themes[theme]).map(([key, value]) => [key, typeof value === 'string' ? (override[key] ?? value) : { ...value, ...(override[key] ?? {}) }]))
+const mergeColors = (theme = 'sage', mode = 'light', override = {}) =>
+  Object.fromEntries(Object.entries(themes[theme][mode]).map(([key, value]) => [key, typeof value === 'string' ? (override[key] ?? value) : { ...value, ...(override[key] ?? {}) }]))
 
 // ---- Layout. Font sizes are in diagram units.
 const TEXT = { title: 15, note: 12, label: 12 }
@@ -239,37 +264,50 @@ function validate(d) {
 const FONT_FAMILY = 'Geist, &quot;Noto Sans KR&quot;, &quot;Malgun Gothic&quot;, &quot;Apple SD Gothic Neo&quot;, &quot;Noto Sans JP&quot;, &quot;Yu Gothic&quot;, &quot;Hiragino Sans&quot;, &quot;Noto Sans SC&quot;, &quot;Microsoft YaHei&quot;, &quot;PingFang SC&quot;, Arial, Helvetica, sans-serif'
 const xml = (text) => text.replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' })[c])
 
-function svg(name, d) {
-  const color = mergeColors(d.theme, d.colors)
+function svg(name, d, mode = 'light', auto = false) {
+  const color = mergeColors(d.theme, mode, mode === 'dark' ? d.colorsDark : d.colors)
   const { boxes, edges } = layoutDiagram(d)
+  // In auto mode the elements carry class names and a prefers-color-scheme rule restyles them for dark; the
+  // attributes stay as the light fallback. Browsers follow the OS setting, resvg (PNG) just draws the light one.
+  const cls = (name) => (auto ? ` class="${name}"` : '')
   // Separate start and end heads: resvg doesn't support orient="auto-start-reverse".
   const marker = (id, stroke) =>
     [['', 'M1 1 L7 4 L1 7', 7], ['-start', 'M7 1 L1 4 L7 7', 1]]
-      .map(([suffix, shape, refX]) => `<marker id="${id}${suffix}" viewBox="0 0 8 8" refX="${refX}" refY="4" markerWidth="7" markerHeight="7" orient="auto" overflow="visible"><path d="${shape}" fill="none" stroke="${stroke}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></marker>`)
+      .map(([suffix, shape, refX]) => `<marker id="${id}${suffix}" viewBox="0 0 8 8" refX="${refX}" refY="4" markerWidth="7" markerHeight="7" orient="auto" overflow="visible"><path${cls('ln-' + id)} d="${shape}" fill="none" stroke="${stroke}" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></marker>`)
       .join('')
-  const groups = (d.groups ?? []).map((g) => `<rect x="${g.x}" y="${g.y}" width="${g.w}" height="${g.h}" rx="18" fill="${color.group.fill}" stroke="${color.group.stroke}" stroke-dasharray="5 5"/><text x="${g.x + 14}" y="${g.y + 20}" font-size="12" fill="${color.group.title}">${xml(g.title)}</text>`)
+  const groups = (d.groups ?? []).map((g) => `<rect${cls('grp')} x="${g.x}" y="${g.y}" width="${g.w}" height="${g.h}" rx="18" fill="${color.group.fill}" stroke="${color.group.stroke}" stroke-dasharray="5 5"/><text${cls('grp-t')} x="${g.x + 14}" y="${g.y + 20}" font-size="12" fill="${color.group.title}">${xml(g.title)}</text>`)
   const lines = edges.map((e) => {
     const kind = e.dashed ? 'dashed' : 'solid'
-    return `<path d="${e.d}" fill="none" stroke="${color[kind].line}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"${e.dashed ? ' stroke-dasharray="4 5"' : ''} marker-end="url(#${kind})"${e.both ? ` marker-start="url(#${kind}-start)"` : ''}/>`
+    return `<path${cls('ln-' + kind)} d="${e.d}" fill="none" stroke="${color[kind].line}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"${e.dashed ? ' stroke-dasharray="4 5"' : ''} marker-end="url(#${kind})"${e.both ? ` marker-start="url(#${kind}-start)"` : ''}/>`
   })
   const nodes = boxes.map((b) => {
-    const c = color[b.tone ?? 'main']
+    const tone = b.tone ?? 'main'
+    const c = color[tone]
     return [
-      `<rect x="${b.x0}" y="${b.y0}" width="${b.w}" height="${b.h}" rx="16" fill="${c.fill}" stroke="${c.stroke}"/>`,
-      `<text x="${b.x}" y="${b.note ? b.y - 5 : b.y + 5}" font-size="${TEXT.title}" font-weight="600" fill="${c.title}">${xml(b.title)}</text>`,
-      b.note ? `<text x="${b.x}" y="${b.y + 16}" font-size="${TEXT.note}" fill="${c.note}">${xml(b.note)}</text>` : '',
+      `<rect${cls('n-' + tone)} x="${b.x0}" y="${b.y0}" width="${b.w}" height="${b.h}" rx="16" fill="${c.fill}" stroke="${c.stroke}"/>`,
+      `<text${cls('t-' + tone)} x="${b.x}" y="${b.note ? b.y - 5 : b.y + 5}" font-size="${TEXT.title}" font-weight="600" fill="${c.title}">${xml(b.title)}</text>`,
+      b.note ? `<text${cls('s-' + tone)} x="${b.x}" y="${b.y + 16}" font-size="${TEXT.note}" fill="${c.note}">${xml(b.note)}</text>` : '',
     ].join('')
   })
   const labels = edges.flatMap((e) => {
     if (!e.label) return []
-    const c = color[e.dashed ? 'dashed' : 'solid']
-    return [`<rect x="${e.label.x - e.label.w / 2}" y="${e.label.y - 11}" width="${e.label.w}" height="22" rx="11" fill="${c.fill}" stroke="${c.stroke}"/><text x="${e.label.x}" y="${e.label.y + 4}" font-size="${TEXT.label}" fill="${c.text}">${xml(e.label.text)}</text>`]
+    const kind = e.dashed ? 'dashed' : 'solid'
+    const c = color[kind]
+    return [`<rect${cls('lb-' + kind)} x="${e.label.x - e.label.w / 2}" y="${e.label.y - 11}" width="${e.label.w}" height="22" rx="11" fill="${c.fill}" stroke="${c.stroke}"/><text${cls('lt-' + kind)} x="${e.label.x}" y="${e.label.y + 4}" font-size="${TEXT.label}" fill="${c.text}">${xml(e.label.text)}</text>`]
   })
+  let style = ''
+  if (auto) {
+    const k = mergeColors(d.theme, 'dark', d.colorsDark)
+    const rules = [`.bg{fill:${k.background}}`, `.grp{fill:${k.group.fill};stroke:${k.group.stroke}}`, `.grp-t{fill:${k.group.title}}`]
+    for (const kind of ['solid', 'dashed']) rules.push(`.ln-${kind}{stroke:${k[kind].line}}`, `.lb-${kind}{fill:${k[kind].fill};stroke:${k[kind].stroke}}`, `.lt-${kind}{fill:${k[kind].text}}`)
+    for (const tone of TONES) rules.push(`.n-${tone}{fill:${k[tone].fill};stroke:${k[tone].stroke}}`, `.t-${tone}{fill:${k[tone].title}}`, `.s-${tone}{fill:${k[tone].note}}`)
+    style = `\n  <style>@media (prefers-color-scheme: dark){${rules.join('')}}</style>`
+  }
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${d.width}" height="${d.height}" viewBox="0 0 ${d.width} ${d.height}" role="img" aria-labelledby="title desc">
   <title id="title">${xml(name)} — Architecture</title>
-  <desc id="desc">${xml(d.summary)}</desc>
+  <desc id="desc">${xml(d.summary)}</desc>${style}
   <defs>${marker('solid', color.solid.line)}${marker('dashed', color.dashed.line)}</defs>
-  <rect width="${d.width}" height="${d.height}" rx="20" fill="${color.background}"/>
+  <rect${cls('bg')} width="${d.width}" height="${d.height}" rx="20" fill="${color.background}"/>
   <g font-family="${FONT_FAMILY}">${groups.join('')}${lines.join('')}<g text-anchor="middle">${nodes.join('')}${labels.join('')}</g></g>
 </svg>
 `
@@ -319,7 +357,7 @@ const flag = (name) => args.includes(name)
 const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined)
 const input = args.find((a, i) => !a.startsWith('--') && !['--out', '--title', '--font-dir', '--theme'].includes(args[i - 1]))
 if (!input || flag('--help')) {
-  console.log('Usage: node render.mjs <diagram.json> [--out <file.svg>] [--png] [--theme sage|blue] [--title <name>] [--font-dir <dir>] [--no-system-fonts] [--check]')
+  console.log('Usage: node render.mjs <diagram.json> [--out <file.svg>] [--png] [--theme sage|blue] [--dark | --both | --auto] [--title <name>] [--font-dir <dir>] [--no-system-fonts] [--check]')
   process.exit(input ? 0 : 1)
 }
 
@@ -347,14 +385,22 @@ if (themeError) {
   console.error(`error: theme must be one of ${THEMES.join(', ')}`)
   process.exit(1)
 }
+if (flag('--auto') && (flag('--dark') || flag('--both'))) {
+  console.error('error: --auto makes one SVG that follows the OS setting; use it without --dark or --both')
+  process.exit(1)
+}
 const name = option('--title') ?? diagram.title ?? basename(input, extname(input))
-const out = resolve(option('--out') ?? `${input.replace(/\.json$/i, '')}.svg`)
-const text = svg(name, diagram)
-await writeFile(out, text)
-console.log(`Wrote ${out}`)
-if (flag('--png')) {
-  const pngPath = out.replace(/\.svg$/i, '') + '.png'
-  await writeFile(pngPath, await png(text, resolve(option('--font-dir') ?? join(here, '..', 'fonts')), !flag('--no-system-fonts')))
-  console.log(`Wrote ${pngPath} (2x)`)
+const base = resolve(option('--out') ?? `${input.replace(/\.json$/i, '')}.svg`).replace(/\.svg$/i, '')
+const fontDir = resolve(option('--font-dir') ?? join(here, '..', 'fonts'))
+const targets = flag('--both') ? [['light', `${base}.svg`], ['dark', `${base}-dark.svg`]] : flag('--dark') ? [['dark', option('--out') ? `${base}.svg` : `${base}-dark.svg`]] : [['light', `${base}.svg`]]
+for (const [mode, out] of targets) {
+  const text = svg(name, diagram, mode, flag('--auto'))
+  await writeFile(out, text)
+  console.log(`Wrote ${out}`)
+  if (flag('--png')) {
+    const pngPath = out.replace(/\.svg$/i, '') + '.png'
+    await writeFile(pngPath, await png(text, fontDir, !flag('--no-system-fonts')))
+    console.log(`Wrote ${pngPath} (2x)`)
+  }
 }
 if (warnings.length) console.log(`${warnings.length} warning(s): look at the picture before you keep it.`)
