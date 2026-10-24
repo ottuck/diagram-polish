@@ -1,7 +1,7 @@
 {
   "name": "diagram-polish",
   "description": "Turn a project's architecture (a Mermaid block, a README, a description) into a clean diagram. Boxes and arrows go in a small JSON file; a bundled script draws it as SVG or PNG.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": { "name": "Henry Kim" },
   "license": "MIT",
   "keywords": ["architecture", "diagram", "svg", "mermaid", "documentation"]
