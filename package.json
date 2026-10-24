@@ -1,6 +1,6 @@
 {
   "name": "diagram-polish",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "A Claude Code skill that turns a project's architecture (a Mermaid block, a README, a description) into a clean diagram, plus the script that draws it.",
   "license": "MIT",
