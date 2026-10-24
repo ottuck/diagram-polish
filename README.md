@@ -2,9 +2,12 @@
 
 A [Claude Code](https://claude.com/claude-code) skill that turns plain diagrams, like the Mermaid block in a README, into clean ones with a look of their own.
 
-**Mermaid's default render**
+**Mermaid, default theme** (the look GitHub shows for a ```mermaid block, and the newer look of the current CLI)
 
-<img src="skills/architecture-diagram/examples/from-mermaid/data-pipeline-mermaid-default.png" alt="A data pipeline drawn by Mermaid's default theme: lavender boxes, yellow frames, labels in gray patches, one long flat row" width="860">
+<p>
+  <img src="skills/architecture-diagram/examples/from-mermaid/data-pipeline-mermaid-cli10.png" alt="A data pipeline drawn by Mermaid 10's default theme: lavender boxes, yellow frames, labels in gray patches, one long flat row" width="420">
+  <img src="skills/architecture-diagram/examples/from-mermaid/data-pipeline-mermaid-cli12.png" alt="The same pipeline in the newer Mermaid look: black outlines, pink and teal frames, labels in gray patches, a line crossing at the Glue box" width="420">
+</p>
 
 **After**
 
@@ -50,7 +53,7 @@ Options: `--theme sage|blue`, `--out`, `--title`, `--font-dir`, `--no-system-fon
 ## Notes
 
 - Box widths are estimated for Geist, which the PNG uses. In the PNG, Hangul and CJK text uses a system sans font (Malgun Gothic, Yu Gothic, Apple SD Gothic Neo or Noto Sans CJK) and bold may not apply to it.
-- The "Mermaid's default render" image is `@mermaid-js/mermaid-cli` 10.9 with its default theme, the lavender-and-yellow look GitHub shows for a ` ```mermaid ` block. Mermaid's layout differs a little between versions and hosts; the look is the same.
+- The two "before" images are `@mermaid-js/mermaid-cli` 10.9 and 12.0 with their default themes. Mermaid's look and layout change between versions and hosts; the point holds in all of them.
 
 ## License
 
