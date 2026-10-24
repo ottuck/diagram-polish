@@ -8,7 +8,7 @@
     "width": { "type": "number" },
     "height": { "type": "number" },
     "summary": { "type": "string", "description": "One or two sentences that tell the flow. Stored as the SVG description." },
-    "theme": { "enum": ["sage", "blue", "mono", "violet", "ember"], "description": "Palette. sage (green and sand) is the default; every theme has a light and a dark variant." },
+    "theme": { "enum": ["sage", "blue", "mono"], "description": "Palette. sage (green and sand) is the default; every theme has a light and a dark variant." },
     "colorsDark": { "type": "object", "description": "Override single entries of the dark palette." },
     "colors": { "type": "object", "description": "Override single palette entries, e.g. { \"main\": { \"fill\": \"#eef\" } }." },
     "groups": {

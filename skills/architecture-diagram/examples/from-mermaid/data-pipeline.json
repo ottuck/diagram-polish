@@ -1,6 +1,5 @@
 {
   "title": "Data pipeline",
-  "theme": "blue",
   "width": 1080,
   "height": 410,
   "summary": "Product events stream through Kinesis and Lambda into an S3 data lake, and the orders database is dumped there nightly. Airflow triggers Glue ETL jobs that load Snowflake, which feeds Looker dashboards for analysts.",
