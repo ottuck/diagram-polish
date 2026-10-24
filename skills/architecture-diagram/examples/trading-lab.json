@@ -1,0 +1,127 @@
+{
+  "title": "Trading Lab",
+  "width": 1080,
+  "height": 570,
+  "summary": "The screens and the worker only talk through the database. Only the worker reaches the brokerage, Claude and Telegram, and the demo runs on its own data with no keys.",
+  "groups": [
+    {
+      "title": "One server · Sydney",
+      "x": 340,
+      "y": 30,
+      "w": 260,
+      "h": 450
+    }
+  ],
+  "nodes": [
+    {
+      "id": "anyone",
+      "x": 80,
+      "y": 90,
+      "title": "Anyone",
+      "tone": "accent"
+    },
+    {
+      "id": "demo",
+      "x": 470,
+      "y": 90,
+      "title": "Demo",
+      "note": "Synthetic prices · no keys"
+    },
+    {
+      "id": "me",
+      "x": 80,
+      "y": 200,
+      "title": "Me",
+      "tone": "accent"
+    },
+    {
+      "id": "app",
+      "x": 470,
+      "y": 200,
+      "title": "Trading Lab",
+      "note": "Screens · API"
+    },
+    {
+      "id": "db",
+      "x": 470,
+      "y": 310,
+      "title": "PostgreSQL"
+    },
+    {
+      "id": "worker",
+      "x": 470,
+      "y": 420,
+      "title": "Worker",
+      "note": "Prices · decisions · orders"
+    },
+    {
+      "id": "toss",
+      "x": 950,
+      "y": 310,
+      "title": "Toss Securities",
+      "note": "Prices · account · orders",
+      "tone": "outside"
+    },
+    {
+      "id": "claude",
+      "x": 950,
+      "y": 420,
+      "title": "Claude",
+      "note": "AI bot decisions",
+      "tone": "outside"
+    },
+    {
+      "id": "telegram",
+      "x": 950,
+      "y": 520,
+      "title": "Telegram",
+      "tone": "outside"
+    }
+  ],
+  "edges": [
+    {
+      "from": "anyone",
+      "to": "demo",
+      "label": "Try it"
+    },
+    {
+      "from": "me",
+      "to": "app",
+      "label": "Private sign-in"
+    },
+    {
+      "from": "app",
+      "to": "db",
+      "both": true
+    },
+    {
+      "from": "worker",
+      "to": "db",
+      "both": true
+    },
+    {
+      "from": "worker",
+      "to": "toss",
+      "label": "Prices · orders",
+      "both": true,
+      "route": "hvh",
+      "fromOffset": -12,
+      "bend": 640,
+      "labelAt": 2
+    },
+    {
+      "from": "worker",
+      "to": "claude",
+      "label": "One call a day"
+    },
+    {
+      "from": "worker",
+      "to": "telegram",
+      "label": "Alerts",
+      "route": "hvh",
+      "fromOffset": 12,
+      "bend": 640,
+      "labelAt": 2
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "title": "Pokepedia",
+  "width": 940,
+  "height": 440,
+  "summary": "The web app and the battle are separate projects. The page opens the Unity build in an iframe and passes the Pikachu over postMessage. Pokémon data was copied from PokeAPI once, so nothing outside is called at runtime.",
+  "groups": [
+    {
+      "title": "pokepedia-unity · separate repo",
+      "x": 180,
+      "y": 186,
+      "w": 360,
+      "h": 118
+    }
+  ],
+  "nodes": [
+    {
+      "id": "player",
+      "x": 100,
+      "y": 80,
+      "title": "Player",
+      "tone": "accent"
+    },
+    {
+      "id": "next",
+      "x": 400,
+      "y": 80,
+      "title": "Next.js · Vercel",
+      "note": "Tokyo · pages, Server Actions"
+    },
+    {
+      "id": "pg",
+      "x": 800,
+      "y": 80,
+      "title": "Supabase Postgres",
+      "note": "Tokyo · RLS, RPC"
+    },
+    {
+      "id": "battle",
+      "x": 400,
+      "y": 256,
+      "title": "Unity battle",
+      "note": "WebGL · Cloudflare Pages"
+    },
+    {
+      "id": "sync",
+      "x": 800,
+      "y": 256,
+      "title": "Sync script",
+      "note": "Run once by hand"
+    },
+    {
+      "id": "pokeapi",
+      "x": 560,
+      "y": 386,
+      "title": "PokeAPI",
+      "tone": "outside"
+    },
+    {
+      "id": "storage",
+      "x": 800,
+      "y": 386,
+      "title": "Supabase Storage",
+      "note": "Served to the page"
+    }
+  ],
+  "edges": [
+    {
+      "from": "player",
+      "to": "next",
+      "label": "Play"
+    },
+    {
+      "from": "next",
+      "to": "pg",
+      "label": "Pages · RPC"
+    },
+    {
+      "from": "next",
+      "to": "battle",
+      "label": "iframe · postMessage",
+      "both": true
+    },
+    {
+      "from": "pokeapi",
+      "to": "sync",
+      "label": "Pokémon data",
+      "dashed": true,
+      "route": "vh",
+      "labelAt": 1
+    },
+    {
+      "from": "sync",
+      "to": "pg",
+      "label": "Stats · names",
+      "dashed": true
+    },
+    {
+      "from": "sync",
+      "to": "storage",
+      "label": "Artwork",
+      "dashed": true
+    }
+  ]
+}

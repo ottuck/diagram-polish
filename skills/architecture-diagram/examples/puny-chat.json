@@ -1,0 +1,92 @@
+{
+  "title": "Puny Chat",
+  "width": 1040,
+  "height": 420,
+  "summary": "Sign-in goes through Firebase, and the server checks each ID token. Chat runs over REST and WebSocket to one Spring server in Sydney, which sends a push when a message goes unread.",
+  "groups": [
+    {
+      "title": "Sydney",
+      "x": 430,
+      "y": 150,
+      "w": 570,
+      "h": 120
+    }
+  ],
+  "nodes": [
+    {
+      "id": "app",
+      "x": 140,
+      "y": 210,
+      "title": "Expo app",
+      "note": "iPhone · web (Cloudflare Workers)"
+    },
+    {
+      "id": "firebase",
+      "x": 540,
+      "y": 60,
+      "title": "Firebase Auth",
+      "note": "Sign-in · ID tokens",
+      "tone": "outside"
+    },
+    {
+      "id": "server",
+      "x": 540,
+      "y": 210,
+      "title": "Spring WebFlux",
+      "note": "AWS Lightsail"
+    },
+    {
+      "id": "db",
+      "x": 880,
+      "y": 210,
+      "title": "MongoDB Atlas"
+    },
+    {
+      "id": "push",
+      "x": 540,
+      "y": 360,
+      "title": "Push",
+      "note": "Expo → APNs · Web Push",
+      "tone": "outside"
+    }
+  ],
+  "edges": [
+    {
+      "from": "app",
+      "to": "server",
+      "label": "REST · WebSocket",
+      "both": true
+    },
+    {
+      "from": "app",
+      "to": "firebase",
+      "label": "Sign-in",
+      "route": "hvh",
+      "fromOffset": -20,
+      "bend": 320,
+      "labelAt": 2
+    },
+    {
+      "from": "server",
+      "to": "firebase",
+      "label": "Verify tokens"
+    },
+    {
+      "from": "server",
+      "to": "db",
+      "both": true
+    },
+    {
+      "from": "server",
+      "to": "push",
+      "label": "Unread messages"
+    },
+    {
+      "from": "push",
+      "to": "app",
+      "label": "Notifications",
+      "route": "hv",
+      "labelAt": 0
+    }
+  ]
+}

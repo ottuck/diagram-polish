@@ -1,0 +1,11 @@
+{
+  "name": "architecture-diagram-skill",
+  "owner": { "name": "Henry Kim" },
+  "plugins": [
+    {
+      "name": "architecture-diagram-skill",
+      "source": "./",
+      "description": "Redraw a project's architecture as a clean, consistent diagram (JSON in, SVG/PNG out)."
+    }
+  ]
+}

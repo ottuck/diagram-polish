@@ -1,0 +1,93 @@
+{
+  "title": "UR Check",
+  "width": 1000,
+  "height": 400,
+  "summary": "One Bun process serves the web app, the MCP server that Claude and ChatGPT connect to, and the scheduler that checks UR's listings.",
+  "groups": [
+    {
+      "title": "Bun · one process",
+      "x": 320,
+      "y": 30,
+      "w": 280,
+      "h": 240
+    }
+  ],
+  "nodes": [
+    {
+      "id": "web",
+      "x": 110,
+      "y": 90,
+      "title": "Web app",
+      "note": "React"
+    },
+    {
+      "id": "ai",
+      "x": 110,
+      "y": 240,
+      "title": "Claude / ChatGPT",
+      "note": "MCP · OAuth",
+      "tone": "outside"
+    },
+    {
+      "id": "api",
+      "x": 460,
+      "y": 90,
+      "title": "Hono",
+      "note": "REST · MCP · scheduler"
+    },
+    {
+      "id": "services",
+      "x": 460,
+      "y": 220,
+      "title": "Services",
+      "note": "Search · tracking · saved searches"
+    },
+    {
+      "id": "pg",
+      "x": 860,
+      "y": 220,
+      "title": "PostgreSQL"
+    },
+    {
+      "id": "ur",
+      "x": 860,
+      "y": 350,
+      "title": "UR official API",
+      "tone": "outside"
+    }
+  ],
+  "edges": [
+    {
+      "from": "web",
+      "to": "api",
+      "label": "REST API"
+    },
+    {
+      "from": "ai",
+      "to": "api",
+      "label": "MCP",
+      "route": "hvh",
+      "toOffset": 12,
+      "bend": 250,
+      "labelAt": 1
+    },
+    {
+      "from": "api",
+      "to": "services"
+    },
+    {
+      "from": "services",
+      "to": "pg",
+      "label": "Saved searches · history",
+      "both": true
+    },
+    {
+      "from": "services",
+      "to": "ur",
+      "label": "Scheduled checks",
+      "dashed": true,
+      "route": "vh",
+      "labelAt": 1
+    }
+  ]
+}
