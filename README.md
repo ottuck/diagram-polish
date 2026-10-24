@@ -4,7 +4,7 @@ A [Claude Code](https://claude.com/claude-code) skill that turns plain diagrams,
 
 **Mermaid's default render**
 
-<img src="skills/architecture-diagram/examples/from-mermaid/data-pipeline-mermaid-default.png" alt="A data pipeline drawn by Mermaid: a long, flat row of plain boxes, labels in gray patches, lines that cross at the Glue box" width="860">
+<img src="skills/architecture-diagram/examples/from-mermaid/data-pipeline-mermaid-default.png" alt="A data pipeline drawn by Mermaid's default theme: lavender boxes, yellow frames, labels in gray patches, one long flat row" width="860">
 
 **After**
 
@@ -50,7 +50,7 @@ Options: `--theme sage|blue`, `--out`, `--title`, `--font-dir`, `--no-system-fon
 ## Notes
 
 - Box widths are estimated for Geist, which the PNG uses. In the PNG, Hangul and CJK text uses a system sans font (Malgun Gothic, Yu Gothic, Apple SD Gothic Neo or Noto Sans CJK) and bold may not apply to it.
-- The "Mermaid's default render" image was made with `@mermaid-js/mermaid-cli` and its default theme.
+- The "Mermaid's default render" image is `@mermaid-js/mermaid-cli` 10.9 with its default theme, the lavender-and-yellow look GitHub shows for a ` ```mermaid ` block. Mermaid's layout differs a little between versions and hosts; the look is the same.
 
 ## License
 
