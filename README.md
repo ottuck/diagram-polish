@@ -45,7 +45,7 @@ node skills/architecture-diagram/scripts/render.mjs diagram.json --png    # also
 node skills/architecture-diagram/scripts/render.mjs diagram.json --check  # validate only
 ```
 
-`--png` needs [`@resvg/resvg-js`](https://github.com/yisibl/resvg-js) in the folder you run it from (`npm i -D @resvg/resvg-js`). It draws with the Geist fonts in `skills/architecture-diagram/fonts`. Other options: `--out <file.svg>`, `--title <name>`, `--font-dir <dir>`.
+`--png` needs [`@resvg/resvg-js`](https://github.com/yisibl/resvg-js) in the folder you run it from (`npm i -D @resvg/resvg-js`). It draws with the Geist fonts in `skills/architecture-diagram/fonts`; for Hangul, kana or Han text it also picks a system sans font (Malgun Gothic, Yu Gothic, Apple SD Gothic Neo or Noto Sans CJK). Other options: `--out <file.svg>`, `--title <name>`, `--font-dir <dir>` (extra `.ttf` files), `--no-system-fonts` (the same PNG on every machine). `--check` also lists every box's bounds, which helps when you place neighbors.
 
 ## The JSON
 
@@ -77,7 +77,8 @@ node skills/architecture-diagram/scripts/render.mjs diagram.json --check  # vali
 
 ## Notes
 
-- Text widths are estimated for Geist. With another font the boxes can look slightly loose or tight; the PNG uses Geist so it always matches.
+- Text widths are estimated for Geist. With another font the boxes can look slightly loose or tight; the PNG uses Geist for Latin text so it always matches. Bold may not apply to Hangul/CJK in the PNG.
+- The SVG lists Geist first and then common CJK sans fonts, so a browser shows Hangul and kana in a sans face too.
 - The six larger examples are the author's own projects, drawn for a portfolio.
 
 ## License

@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 // Draws a diagram.json as a standalone SVG, and optionally as a 2x PNG.
 //
-//   node render.mjs <diagram.json> [--out <file.svg>] [--png] [--title <name>] [--font-dir <dir>] [--check]
+//   node render.mjs <diagram.json> [--out <file.svg>] [--png] [--title <name>] [--font-dir <dir>] [--no-system-fonts] [--check]
 //
 // The SVG needs no dependencies. --png needs @resvg/resvg-js (npm i -D @resvg/resvg-js) and uses the
-// Geist fonts in ../fonts unless --font-dir says otherwise. --check validates and prints warnings only.
+// Geist fonts in ../fonts unless --font-dir says otherwise, plus the system fonts for glyphs Geist lacks (Hangul, CJK);
+// --no-system-fonts turns that off so the PNG is identical on every machine. --check validates, lists each box's
+// bounds and prints warnings, without writing files.
 import { createRequire } from 'node:module'
 import { existsSync } from 'node:fs'
 import { readdir, readFile, writeFile } from 'node:fs/promises'
@@ -68,14 +70,17 @@ function points(e, a, b) {
       return [[x, a.y + (dy * a.h) / 2], [x, b.y - (dy * b.h) / 2]]
     }
     case 'hvh': {
-      const x1 = a.x + (dx * a.w) / 2
-      const x2 = b.x - (dx * b.w) / 2
+      // Leave and arrive on the side that faces the bend, so a bend outside both boxes loops around them.
+      const m0 = e.bend ?? (a.x + b.x) / 2
+      const x1 = a.x + (Math.sign(m0 - a.x) || dx) * (a.w / 2)
+      const x2 = b.x + (Math.sign(m0 - b.x) || -dx) * (b.w / 2)
       const m = e.bend ?? (x1 + x2) / 2
       return [[x1, a.y + from], [m, a.y + from], [m, b.y + to], [x2, b.y + to]]
     }
     case 'vhv': {
-      const y1 = a.y + (dy * a.h) / 2
-      const y2 = b.y - (dy * b.h) / 2
+      const m0 = e.bend ?? (a.y + b.y) / 2
+      const y1 = a.y + (Math.sign(m0 - a.y) || dy) * (a.h / 2)
+      const y2 = b.y + (Math.sign(m0 - b.y) || -dy) * (b.h / 2)
       const m = e.bend ?? (y1 + y2) / 2
       return [[a.x + from, y1], [a.x + from, m], [b.x + to, m], [b.x + to, y2]]
     }
@@ -181,25 +186,30 @@ function validate(d) {
       if (inside && hit(r, title)) warnings.push(`box "${b.id}" covers the title of group "${g.title}"`)
     }
   }
-  // A line crossing a box it neither starts nor ends at.
+  // A line crossing a box: one it neither starts nor ends at, or its own end box (it left or arrived on the wrong side).
   for (const e of edges) {
     for (let k = 1; k < e.points.length; k++) {
       const [a, b] = [e.points[k - 1], e.points[k]]
       const seg = { x0: Math.min(a[0], b[0]), x1: Math.max(a[0], b[0]), y0: Math.min(a[1], b[1]), y1: Math.max(a[1], b[1]) }
       for (const bx of boxes) {
-        if (bx.id === e.from || bx.id === e.to) continue
+        const own = bx.id === e.from || bx.id === e.to
         const r = rect(bx)
-        if (seg.x0 < r.x1 - 1 && r.x0 + 1 < seg.x1 + 0.01 && seg.y0 < r.y1 - 1 && r.y0 + 1 < seg.y1 + 0.01) warnings.push(`the line ${e.from} → ${e.to} passes through box "${bx.id}"`)
+        const shrink = own ? 3 : 1
+        if (seg.x0 < r.x1 - shrink && r.x0 + shrink < seg.x1 + 0.01 && seg.y0 < r.y1 - shrink && r.y0 + shrink < seg.y1 + 0.01) {
+          warnings.push(own ? `the line ${e.from} → ${e.to} runs through its own box "${bx.id}"; move its bend or use another route` : `the line ${e.from} → ${e.to} passes through box "${bx.id}"`)
+        }
       }
     }
   }
   const pills = edges.filter((e) => e.label).map((e) => ({ id: `${e.from} → ${e.to}`, x0: e.label.x - e.label.w / 2, x1: e.label.x + e.label.w / 2, y0: e.label.y - 11, y1: e.label.y + 11 }))
   for (const p of pills) for (const b of boxes) if (hit(p, rect(b))) warnings.push(`the label on ${p.id} touches box "${b.id}"`)
   for (let i = 0; i < pills.length; i++) for (let j = i + 1; j < pills.length; j++) if (hit(pills[i], pills[j])) warnings.push(`the labels on ${pills[i].id} and ${pills[j].id} overlap`)
-  return { errors, warnings: [...new Set(warnings)] }
+  return { errors, warnings: [...new Set(warnings)], boxes }
 }
 
 // ---- SVG
+// Geist first; then sans-serif fonts that have Hangul and CJK glyphs, so those characters don't fall back to a serif face.
+const FONT_FAMILY = 'Geist, &quot;Noto Sans KR&quot;, &quot;Malgun Gothic&quot;, &quot;Apple SD Gothic Neo&quot;, &quot;Noto Sans JP&quot;, &quot;Yu Gothic&quot;, &quot;Hiragino Sans&quot;, &quot;Noto Sans SC&quot;, &quot;Microsoft YaHei&quot;, &quot;PingFang SC&quot;, Arial, Helvetica, sans-serif'
 const xml = (text) => text.replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' })[c])
 
 function svg(name, d) {
@@ -233,7 +243,7 @@ function svg(name, d) {
   <desc id="desc">${xml(d.summary)}</desc>
   <defs>${marker('solid', color.solid.line)}${marker('dashed', color.dashed.line)}</defs>
   <rect width="${d.width}" height="${d.height}" rx="20" fill="${color.background}"/>
-  <g font-family="Geist, Arial, Helvetica, sans-serif">${groups.join('')}${lines.join('')}<g text-anchor="middle">${nodes.join('')}${labels.join('')}</g></g>
+  <g font-family="${FONT_FAMILY}">${groups.join('')}${lines.join('')}<g text-anchor="middle">${nodes.join('')}${labels.join('')}</g></g>
 </svg>
 `
 }
@@ -251,10 +261,29 @@ async function loadResvg() {
   }
 }
 
-async function png(text, fontDir) {
+// Sans-serif fonts with Hangul / kana / Han glyphs, by platform. resvg falls back to whatever system font it finds
+// first for a missing glyph (often a serif face), so when the text needs CJK we hand it one of these explicitly.
+const CJK_SANS = [
+  'C:/Windows/Fonts/malgun.ttf', 'C:/Windows/Fonts/malgunbd.ttf', 'C:/Windows/Fonts/YuGothR.ttc', 'C:/Windows/Fonts/YuGothB.ttc', 'C:/Windows/Fonts/msyh.ttc', 'C:/Windows/Fonts/msyhbd.ttc',
+  '/System/Library/Fonts/AppleSDGothicNeo.ttc', '/System/Library/Fonts/Hiragino Sans GB.ttc',
+  '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc', '/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc',
+  '/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc', '/usr/share/fonts/noto-cjk/NotoSansCJK-Bold.ttc', '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc',
+]
+
+async function png(text, fontDir, systemFonts) {
   const { Resvg } = await loadResvg()
   const files = existsSync(fontDir) ? (await readdir(fontDir)).filter((f) => f.endsWith('.ttf')).map((f) => join(fontDir, f)) : []
-  return new Resvg(text, { fitTo: { mode: 'zoom', value: 2 }, font: { fontFiles: files, loadSystemFonts: files.length === 0, defaultFontFamily: 'Geist' } }).render().asPng()
+  let useSystem = systemFonts
+  if ([...text].some(wide)) {
+    const cjk = CJK_SANS.filter((file) => existsSync(file))
+    if (cjk.length) {
+      files.push(...cjk)
+      useSystem = false
+    } else if (systemFonts) {
+      console.warn('warning: the text has Hangul/CJK but no known CJK sans font was found; the PNG falls back to whatever system font has the glyphs. Pass --font-dir with a CJK .ttf to control it.')
+    }
+  }
+  return new Resvg(text, { fitTo: { mode: 'zoom', value: 2 }, font: { fontFiles: files, loadSystemFonts: useSystem || files.length === 0, defaultFontFamily: 'Geist' } }).render().asPng()
 }
 
 // ---- CLI
@@ -263,7 +292,7 @@ const flag = (name) => args.includes(name)
 const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined)
 const input = args.find((a, i) => !a.startsWith('--') && !['--out', '--title', '--font-dir'].includes(args[i - 1]))
 if (!input || flag('--help')) {
-  console.log('Usage: node render.mjs <diagram.json> [--out <file.svg>] [--png] [--title <name>] [--font-dir <dir>] [--check]')
+  console.log('Usage: node render.mjs <diagram.json> [--out <file.svg>] [--png] [--title <name>] [--font-dir <dir>] [--no-system-fonts] [--check]')
   process.exit(input ? 0 : 1)
 }
 
@@ -274,11 +303,12 @@ try {
   console.error(`Could not read ${input}: ${error.message}`)
   process.exit(1)
 }
-const { errors, warnings } = validate(diagram)
+const { errors, warnings, boxes } = validate(diagram)
 for (const e of errors) console.error(`error: ${e}`)
 for (const w of warnings) console.warn(`warning: ${w}`)
 if (errors.length) process.exit(1)
 if (flag('--check')) {
+  for (const b of boxes) console.log('  ' + b.id + ': x ' + Math.round(b.x0) + '–' + Math.round(b.x0 + b.w) + ', y ' + Math.round(b.y0) + '–' + Math.round(b.y0 + b.h) + ' (' + Math.round(b.w) + '×' + b.h + ')')
   console.log(warnings.length ? `${warnings.length} warning(s).` : 'No problems found.')
   process.exit(0)
 }
@@ -290,7 +320,7 @@ await writeFile(out, text)
 console.log(`Wrote ${out}`)
 if (flag('--png')) {
   const pngPath = out.replace(/\.svg$/i, '') + '.png'
-  await writeFile(pngPath, await png(text, resolve(option('--font-dir') ?? join(here, '..', 'fonts'))))
+  await writeFile(pngPath, await png(text, resolve(option('--font-dir') ?? join(here, '..', 'fonts')), !flag('--no-system-fonts')))
   console.log(`Wrote ${pngPath} (2x)`)
 }
 if (warnings.length) console.log(`${warnings.length} warning(s): look at the picture before you keep it.`)
