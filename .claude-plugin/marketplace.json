@@ -1,9 +1,9 @@
 {
-  "name": "architecture-diagram-skill",
+  "name": "diagram-polish",
   "owner": { "name": "Henry Kim" },
   "plugins": [
     {
-      "name": "architecture-diagram-skill",
+      "name": "diagram-polish",
       "source": "./",
       "description": "Redraw a project's architecture as a clean, consistent diagram (JSON in, SVG/PNG out)."
     }

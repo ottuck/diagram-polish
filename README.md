@@ -1,4 +1,4 @@
-# architecture-diagram-skill
+# diagram-polish
 
 A [Claude Code](https://claude.com/claude-code) skill that turns plain diagrams, like the Mermaid block in a README, into clean ones with a look of their own.
 
@@ -33,7 +33,7 @@ cp -r skills/architecture-diagram ~/.claude/skills/         # every project
 cp -r skills/architecture-diagram <project>/.claude/skills/ # one project
 ```
 
-Start a new session, then ask: *"turn the Mermaid in the README into an architecture diagram."* The repo is also a plugin marketplace: `claude plugin marketplace add <owner>/architecture-diagram-skill`, then `claude plugin install architecture-diagram-skill@architecture-diagram-skill`. The manifests follow the plugin docs but have not been run through `claude plugin validate` yet.
+Start a new session, then ask: *"turn the Mermaid in the README into an architecture diagram."* The repo is also a plugin marketplace: `claude plugin marketplace add <owner>/diagram-polish`, then `claude plugin install diagram-polish@diagram-polish`. The manifests follow the plugin docs but have not been run through `claude plugin validate` yet.
 
 ## Use the script alone
 
