@@ -2,14 +2,17 @@
 
 A [Claude Code](https://claude.com/claude-code) skill that turns plain diagrams, like the Mermaid block in a README, into clean ones with a look of their own.
 
-**Mermaid, default theme** (the look GitHub shows for a ```mermaid block, and the newer look of the current CLI)
+**Before: Mermaid's default theme**
 
-<p>
-  <img src="skills/architecture-diagram/examples/from-mermaid/data-pipeline-mermaid-cli10.png" alt="A data pipeline drawn by Mermaid 10's default theme: lavender boxes, yellow frames, labels in gray patches, one long flat row" width="420">
-  <img src="skills/architecture-diagram/examples/from-mermaid/data-pipeline-mermaid-cli12.png" alt="The same pipeline in the newer Mermaid look: black outlines, pink and teal frames, labels in gray patches, a line crossing at the Glue box" width="420">
-</p>
+The look GitHub shows for a Mermaid code block:
 
-**After**
+<img src="skills/architecture-diagram/examples/from-mermaid/data-pipeline-mermaid-cli10.png" alt="A data pipeline drawn by Mermaid 10's default theme: lavender boxes, yellow frames, labels in gray patches, one long flat row" width="880">
+
+The newer look of the current Mermaid CLI:
+
+<img src="skills/architecture-diagram/examples/from-mermaid/data-pipeline-mermaid-cli12.png" alt="The same pipeline in the newer Mermaid look: black outlines, pink and teal frames, labels in gray patches, a line crossing at the Glue box" width="880">
+
+**After: this skill**
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="skills/architecture-diagram/examples/from-mermaid/data-pipeline-dark.png">
