@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Draws a diagram.json as a standalone SVG, and optionally as a 2x PNG.
 //
-//   node render.mjs <diagram.json> [--out <file.svg>] [--png] [--theme sage|blue] [--dark | --both | --auto] [--title <name>] [--font-dir <dir>] [--no-system-fonts] [--check]
+//   node render.mjs <diagram.json> [--out <file.svg>] [--png] [--theme sage|blue|mono|violet|ember] [--dark | --both | --auto] [--title <name>] [--font-dir <dir>] [--no-system-fonts] [--check]
 //
 // --dark draws the dark palette (<name>-dark.svg), --both writes the light and the dark file, --auto writes one SVG
 // that follows the OS light/dark setting through prefers-color-scheme (the PNG of it is the light one).
@@ -60,6 +60,69 @@ const themes = {
       outside: { fill: '#1b222c', stroke: '#313c4b', title: '#e8edf4', note: '#93a1b4' },
       solid: { line: '#6f86a6', fill: '#14233a', stroke: '#2c4468', text: '#b5cae6' },
       dashed: { line: '#8a8fd0', fill: '#1a1d38', stroke: '#363a73', text: '#b7bbf0' },
+    },
+  },
+  // Graphite: neutral grays, good for print and for docs that already have a color scheme.
+  mono: {
+    light: {
+      background: '#fcfcfc',
+      group: { fill: '#f6f6f6', stroke: '#e2e2e2', title: '#666666' },
+      main: { fill: '#efefef', stroke: '#cdcdcd', title: '#1f1f1f', note: '#585858' },
+      accent: { fill: '#e2e2e2', stroke: '#b4b4b4', title: '#111111', note: '#474747' },
+      outside: { fill: '#ffffff', stroke: '#c2c2c2', title: '#1f1f1f', note: '#5f5f5f' },
+      solid: { line: '#767676', fill: '#f5f5f5', stroke: '#dadada', text: '#424242' },
+      dashed: { line: '#8a8a8a', fill: '#f5f5f5', stroke: '#dcdcdc', text: '#505050' },
+    },
+    dark: {
+      background: '#121212',
+      group: { fill: '#181818', stroke: '#2e2e2e', title: '#9d9d9d' },
+      main: { fill: '#222222', stroke: '#404040', title: '#ececec', note: '#a8a8a8' },
+      accent: { fill: '#303030', stroke: '#5e5e5e', title: '#ffffff', note: '#bdbdbd' },
+      outside: { fill: '#161616', stroke: '#3c3c3c', title: '#f2f2f2', note: '#9f9f9f' },
+      solid: { line: '#8a8a8a', fill: '#1c1c1c', stroke: '#3a3a3a', text: '#cfcfcf' },
+      dashed: { line: '#9b9b9b', fill: '#1a1a1a', stroke: '#404040', text: '#bcbcbc' },
+    },
+  },
+  // Violet and rose.
+  violet: {
+    light: {
+      background: '#fcfbfe',
+      group: { fill: '#f7f4fc', stroke: '#e3dcf1', title: '#6a5f82' },
+      main: { fill: '#f0eafb', stroke: '#d0c4ee', title: '#3f2a6b', note: '#665590' },
+      accent: { fill: '#fdeff6', stroke: '#eec6da', title: '#7a2a55', note: '#93506f' },
+      outside: { fill: '#f1eff4', stroke: '#d7d2df', title: '#221c2e', note: '#625b70' },
+      solid: { line: '#8a7dac', fill: '#f6f2fc', stroke: '#ddd3f0', text: '#51407a' },
+      dashed: { line: '#b9799f', fill: '#fcf3f8', stroke: '#efd5e4', text: '#84406a' },
+    },
+    dark: {
+      background: '#141118',
+      group: { fill: '#1a1620', stroke: '#2f283b', title: '#a99fbd' },
+      main: { fill: '#241b38', stroke: '#43336b', title: '#e3d9fa', note: '#a797cf' },
+      accent: { fill: '#36182a', stroke: '#6a2f55', title: '#f6d3e6', note: '#d49bbb' },
+      outside: { fill: '#1f1b25', stroke: '#3b3446', title: '#efeaf5', note: '#a399b3' },
+      solid: { line: '#8171ad', fill: '#1e1730', stroke: '#3d2f63', text: '#cabfe8' },
+      dashed: { line: '#c27aa8', fill: '#2a1522', stroke: '#5e2b4c', text: '#e5b4cf' },
+    },
+  },
+  // Terracotta and amber.
+  ember: {
+    light: {
+      background: '#fffdfb',
+      group: { fill: '#fcf7f2', stroke: '#efe0d2', title: '#76604f' },
+      main: { fill: '#fdeee3', stroke: '#efcab0', title: '#6b2f12', note: '#8f522f' },
+      accent: { fill: '#fbf3d6', stroke: '#e6d38c', title: '#5f4d08', note: '#7c6618' },
+      outside: { fill: '#f2eeea', stroke: '#dbd2c9', title: '#26201b', note: '#675d54' },
+      solid: { line: '#b2805f', fill: '#fdf3ec', stroke: '#f0d8c7', text: '#744025' },
+      dashed: { line: '#8c8f4f', fill: '#f8f8ec', stroke: '#e1e3be', text: '#5a5c26' },
+    },
+    dark: {
+      background: '#181210',
+      group: { fill: '#1f1713', stroke: '#3a2b22', title: '#b8a396' },
+      main: { fill: '#38201a', stroke: '#6b3a29', title: '#fbe0cf', note: '#d09a7e' },
+      accent: { fill: '#332b10', stroke: '#6a5a1b', title: '#f3e3a1', note: '#cbb560' },
+      outside: { fill: '#221d19', stroke: '#43392f', title: '#f4ece4', note: '#ada091' },
+      solid: { line: '#c0866a', fill: '#2c1a14', stroke: '#5c3224', text: '#e8c3ae' },
+      dashed: { line: '#a9aa6b', fill: '#22230f', stroke: '#484a1f', text: '#d3d49a' },
     },
   },
 }
@@ -357,7 +420,7 @@ const flag = (name) => args.includes(name)
 const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined)
 const input = args.find((a, i) => !a.startsWith('--') && !['--out', '--title', '--font-dir', '--theme'].includes(args[i - 1]))
 if (!input || flag('--help')) {
-  console.log('Usage: node render.mjs <diagram.json> [--out <file.svg>] [--png] [--theme sage|blue] [--dark | --both | --auto] [--title <name>] [--font-dir <dir>] [--no-system-fonts] [--check]')
+  console.log('Usage: node render.mjs <diagram.json> [--out <file.svg>] [--png] [--theme sage|blue|mono|violet|ember] [--dark | --both | --auto] [--title <name>] [--font-dir <dir>] [--no-system-fonts] [--check]')
   process.exit(input ? 0 : 1)
 }
 

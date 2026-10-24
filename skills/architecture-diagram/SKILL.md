@@ -8,7 +8,7 @@ description: Turn a project's architecture (a Mermaid block in a README, a scree
 You describe the system as boxes and arrows in `diagram.json`; `scripts/render.mjs` computes box sizes and line routes and draws a standalone SVG (and optionally a 2x PNG). Nothing is drawn by hand and no colors are chosen: boxes only pick a `tone`.
 
 ```
-node <this skill's folder>/scripts/render.mjs <diagram.json> [--png] [--dark | --both | --auto] [--check] [--out <file.svg>] [--theme sage|blue] [--title <name>]
+node <this skill's folder>/scripts/render.mjs <diagram.json> [--png] [--dark | --both | --auto] [--check] [--out <file.svg>] [--theme sage|blue|mono|violet|ember] [--title <name>]
 ```
 
 - The SVG needs no dependencies.
@@ -81,7 +81,7 @@ Put it where the project keeps docs (for example `docs/architecture.json`); the 
 ```
 
 ### Canvas and boxes
-- `"theme"` is `sage` (green and sand, the default) or `blue` (cool blue and slate). Keep the default unless the user asks for another look or the project's own colors are blue.
+- `"theme"` picks the palette: `sage` (green and sand, the default), `blue` (cool blue and slate), `mono` (graphite grays, good for print and for docs that already have a color scheme), `violet` (violet and rose) or `ember` (terracotta and amber). Each has a dark variant. Keep the default unless the user asks for another look or the project's own colors point to one.
 - Coordinates are SVG pixels. `width` is usually 1000–1080; `height` 360–420, or up to about 480 for three rows.
 - A node's `x`, `y` is the **center** of its box. Height is 68 with a `note` and 52 without. **Width is computed:** `max(120, widest text) + 40`, where text width is about 6.6 per character for the note (12px) and 8.7 for the title (15px bold; capitals and digits are wider). `Polygon · Ethereum · Avalanche` (30 characters) gives about 240. It's an estimate: run `--check` to read the real bounds before you place neighbors.
 - Keep every box at least 20 from the canvas edge (`x + width/2 <= canvas width - 20` for the right-most). Raise `width` or move the node if it is cut off.
@@ -123,6 +123,6 @@ Tell the user where the JSON, SVG and PNG are, which boxes you merged or dropped
 ## Don't
 
 - Don't paste the old Mermaid or an image in place of the diagram.
-- Don't set colors per box or per line; pick `tone`. For another look use `"theme": "blue"`, or override single palette entries once with a top-level `"colors"` object (`"colorsDark"` for the dark palette; same keys as the script's palette).
+- Don't set colors per box or per line; pick `tone`. For another look use `"theme": "blue"` (or another theme), or override single palette entries once with a top-level `"colors"` object (`"colorsDark"` for the dark palette; same keys as the script's palette).
 - Don't draw a component you haven't seen in the code or docs, unless you say it's from the source only.
 - Don't crowd more than about seven boxes into one diagram. Split it, or merge boxes.

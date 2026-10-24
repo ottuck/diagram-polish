@@ -22,7 +22,7 @@ The newer look of the current Mermaid CLI:
 Mermaid is quick to write and rarely nice to look at: the layout is whatever the engine picks, labels sit in gray patches, and no two diagrams match. Give Claude the Mermaid, a description, or just the repo, and this skill redraws it.
 
 - **It simplifies.** Ten or fourteen nodes become five to seven boxes: pieces of one codebase are merged, duplicate arrows are joined, labels shrink to a word or two. It checks the code first, so nothing is drawn that doesn't exist.
-- **It gives every diagram the same look.** Soft boxes, a dashed frame for what runs together, a different tone for services you don't run, dashed lines for scheduled or asynchronous work. Pick `sage` or `blue`. Hangul and CJK text work too.
+- **It gives every diagram the same look.** Soft boxes, a dashed frame for what runs together, a different tone for services you don't run, dashed lines for scheduled or asynchronous work. Pick one of five themes, each with a dark variant. Hangul and CJK text work too.
 - **It checks its own drawing.** The script stops on mistakes and warns about cut-off boxes, overlaps, lines through boxes and colliding labels. Claude then looks at the picture before handing it over.
 - **Plain files in, plain files out.** The diagram is a small `diagram.json`; the script writes a standalone SVG (no dependencies) and, if you want, a 2x PNG.
 
@@ -43,14 +43,19 @@ node skills/architecture-diagram/scripts/render.mjs diagram.json --png    # + di
 node skills/architecture-diagram/scripts/render.mjs diagram.json --check  # validate, list box bounds, warnings
 ```
 
-Options: `--theme sage|blue`, `--dark`, `--both`, `--auto` (see Dark mode), `--out`, `--title`, `--font-dir`, `--no-system-fonts`. The rules, the JSON format and what every field does are in [`SKILL.md`](skills/architecture-diagram/SKILL.md); [`starter.json`](skills/architecture-diagram/examples/starter.json) is a minimal file and [`diagram.schema.json`](skills/architecture-diagram/diagram.schema.json) a schema for your editor.
+Options: `--theme sage|blue|mono|violet|ember`, `--dark`, `--both`, `--auto` (see Dark mode), `--out`, `--title`, `--font-dir`, `--no-system-fonts`. The rules, the JSON format and what every field does are in [`SKILL.md`](skills/architecture-diagram/SKILL.md); [`starter.json`](skills/architecture-diagram/examples/starter.json) is a minimal file and [`diagram.schema.json`](skills/architecture-diagram/diagram.schema.json) a schema for your editor.
 
 ## Themes
 
-<p>
-  <img src="skills/architecture-diagram/examples/starter.png" alt="Starter diagram, sage theme" width="420">
-  <img src="skills/architecture-diagram/examples/starter-blue.png" alt="Starter diagram, blue theme" width="420">
-</p>
+Five themes, light on the left and dark on the right. Pick one with `"theme"` in the JSON or `--theme` on the command line:
+
+- `sage` (default): green and sand
+- `blue`: cool blue and slate
+- `mono`: graphite grays, for print or docs that already have a color scheme
+- `violet`: violet and rose
+- `ember`: terracotta and amber
+
+<img src="docs/themes.png" alt="The same data pipeline in the five themes, each in a light and a dark version" width="880">
 
 ## Dark mode
 
