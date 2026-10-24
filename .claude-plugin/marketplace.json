@@ -1,6 +1,9 @@
 {
   "name": "diagram-polish",
-  "owner": { "name": "Henry Kim" },
+  "description": "Redraw a project's architecture diagram: Mermaid and sketches in, clean SVG and PNG out.",
+  "owner": {
+    "name": "Henry Kim"
+  },
   "plugins": [
     {
       "name": "diagram-polish",
