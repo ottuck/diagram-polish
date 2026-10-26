@@ -1,5 +1,5 @@
 // Redraws every example under skills/architecture-diagram/examples (including from-mermaid/) as SVG and PNG.
-// Run `npm install` first (the PNG step uses @resvg/resvg-js). With --check it only validates.
+// Run `npm install` first (the PNG step uses @resvg/resvg-js). With --check it only validates and fails on any warning.
 import { execFileSync } from 'node:child_process'
 import { readdirSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
@@ -20,7 +20,7 @@ const render = (...args) => execFileSync(process.execPath, [join(skill, 'scripts
 
 for (const file of jsonFiles(join(skill, 'examples'))) {
   const name = basename(file, '.json')
-  if (check) render(file, '--check')
+  if (check) render(file, '--check', '--strict')
   else render(file, withDark.has(name) ? '--both' : '--png', ...(withDark.has(name) ? ['--png'] : []), '--no-system-fonts')
   if (!check && name === 'starter') render(file, '--auto', '--out', join(dirname(file), 'starter-auto.svg'))
 }
