@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 // Draws a diagram.json as a standalone SVG, and optionally as a 2x PNG.
 //
-//   node render.mjs <diagram.json> [--out <file.svg>] [--png] [--theme sage|blue|mono] [--dark | --both | --auto] [--title <name>] [--font-dir <dir>] [--no-system-fonts] [--check]
+//   node render.mjs <diagram.json> [--out <file.svg>] [--png] [--theme sage|blue|mono] [--dark | --both | --auto] [--title <name>] [--font-dir <dir>] [--no-system-fonts] [--embed-fonts] [--check] [--strict]
 //
 // --dark draws the dark palette (<name>-dark.svg), --both writes the light and the dark file, --auto writes one SVG
 // that follows the OS light/dark setting through prefers-color-scheme (the PNG of it is the light one).
 // The SVG needs no dependencies. --png needs @resvg/resvg-js (npm i -D @resvg/resvg-js) and uses the
 // Geist fonts in ../fonts unless --font-dir says otherwise, plus the system fonts for glyphs Geist lacks (Hangul, CJK);
 // --no-system-fonts turns that off so the PNG is identical on every machine. --check validates, lists each box's
-// bounds and prints warnings, without writing files.
+// bounds and prints warnings, without writing files. --strict exits with code 1 when there are warnings (the files are
+// still written unless --check is given), so a script or CI job can stop on them.
 import { createRequire } from 'node:module'
 import { existsSync } from 'node:fs'
 import { readdir, readFile, writeFile } from 'node:fs/promises'
@@ -245,6 +246,7 @@ function validate(d) {
       if (hit(r, gr) && !inside) warnings.push(`box "${b.id}" crosses the edge of group "${g.title}"`)
       const title = { x0: g.x + 14, y0: g.y + 8, x1: g.x + 14 + textWidth(g.title, 12), y1: g.y + 26 }
       if (inside && hit(r, title)) warnings.push(`box "${b.id}" covers the title of group "${g.title}"`)
+      if (inside && (r.x0 - gr.x0 < 8 || gr.x1 - r.x1 < 8 || gr.y1 - r.y1 < 8)) warnings.push(`box "${b.id}" is less than 8 from the edge of group "${g.title}"; give it more room or widen the frame`)
     }
   }
   // A line crossing a box: one it neither starts nor ends at, or its own end box (it left or arrived on the wrong side).
@@ -262,6 +264,24 @@ function validate(d) {
       }
     }
   }
+  // A line across a group's title is hard to read; the title sits at the group's top left.
+  for (const g of d.groups ?? []) {
+    const title = { x0: g.x + 14, y0: g.y + 8, x1: g.x + 14 + textWidth(g.title, 12), y1: g.y + 26 }
+    for (const e of edges) {
+      const crosses = e.points.slice(1).some((q, k) => {
+        const [a, b] = [e.points[k], q]
+        return Math.min(a[0], b[0]) < title.x1 && title.x0 < Math.max(a[0], b[0]) && Math.min(a[1], b[1]) < title.y1 && title.y0 < Math.max(a[1], b[1])
+      })
+      if (crosses) warnings.push(`the line ${e.from} → ${e.to} runs through the title of group "${g.title}"; move the line or the frame`)
+    }
+  }
+  // Two lines that run along the same stretch look like one line, so nobody can tell which arrow goes where.
+  const runs = (e) => e.points.slice(1).map((q, k) => [e.points[k], q])
+  const shared = (a, b) => {
+    const along = (s, t, i, j) => Math.abs(s[0][j] - s[1][j]) < 0.5 && Math.abs(t[0][j] - t[1][j]) < 0.5 && Math.abs(s[0][j] - t[0][j]) < 0.5 && Math.min(Math.max(s[0][i], s[1][i]), Math.max(t[0][i], t[1][i])) - Math.max(Math.min(s[0][i], s[1][i]), Math.min(t[0][i], t[1][i])) > 8
+    return runs(a).some((s) => runs(b).some((t) => along(s, t, 0, 1) || along(s, t, 1, 0)))
+  }
+  for (let i = 0; i < edges.length; i++) for (let j = i + 1; j < edges.length; j++) if (shared(edges[i], edges[j])) warnings.push(`the lines ${edges[i].from} → ${edges[i].to} and ${edges[j].from} → ${edges[j].to} run along the same path; give one a different route, bend or offset`)
   const pills = edges.filter((e) => e.label).map((e) => ({ id: `${e.from} → ${e.to}`, x0: e.label.x - e.label.w / 2, x1: e.label.x + e.label.w / 2, y0: e.label.y - 11, y1: e.label.y + 11 }))
   for (const p of pills) for (const b of boxes) if (hit(p, rect(b))) warnings.push(`the label on ${p.id} touches box "${b.id}"`)
   for (let i = 0; i < pills.length; i++) for (let j = i + 1; j < pills.length; j++) if (hit(pills[i], pills[j])) warnings.push(`the labels on ${pills[i].id} and ${pills[j].id} overlap`)
@@ -285,7 +305,7 @@ function validate(d) {
 const FONT_FAMILY = 'Geist, &quot;Noto Sans KR&quot;, &quot;Malgun Gothic&quot;, &quot;Apple SD Gothic Neo&quot;, &quot;Noto Sans JP&quot;, &quot;Yu Gothic&quot;, &quot;Hiragino Sans&quot;, &quot;Noto Sans SC&quot;, &quot;Microsoft YaHei&quot;, &quot;PingFang SC&quot;, Arial, Helvetica, sans-serif'
 const xml = (text) => text.replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' })[c])
 
-function svg(name, d, mode = 'light', auto = false) {
+function svg(name, d, mode = 'light', auto = false, fontCss = '') {
   const color = mergeColors(d.theme, mode, mode === 'dark' ? d.colorsDark : d.colors)
   const { boxes, edges } = layoutDiagram(d)
   // In auto mode the elements carry class names and a prefers-color-scheme rule restyles them for dark; the
@@ -316,14 +336,15 @@ function svg(name, d, mode = 'light', auto = false) {
     const c = color[kind]
     return [`<rect${cls('lb-' + kind)} x="${e.label.x - e.label.w / 2}" y="${e.label.y - 11}" width="${e.label.w}" height="22" rx="11" fill="${c.fill}" stroke="${c.stroke}"/><text${cls('lt-' + kind)} x="${e.label.x}" y="${e.label.y + 4}" font-size="${TEXT.label}" fill="${c.text}">${xml(e.label.text)}</text>`]
   })
-  let style = ''
+  let css = fontCss
   if (auto) {
     const k = mergeColors(d.theme, 'dark', d.colorsDark)
     const rules = [`.bg{fill:${k.background}}`, `.grp{fill:${k.group.fill};stroke:${k.group.stroke}}`, `.grp-t{fill:${k.group.title}}`]
     for (const kind of ['solid', 'dashed']) rules.push(`.ln-${kind}{stroke:${k[kind].line}}`, `.lb-${kind}{fill:${k[kind].fill};stroke:${k[kind].stroke}}`, `.lt-${kind}{fill:${k[kind].text}}`)
     for (const tone of TONES) rules.push(`.n-${tone}{fill:${k[tone].fill};stroke:${k[tone].stroke}}`, `.t-${tone}{fill:${k[tone].title}}`, `.s-${tone}{fill:${k[tone].note}}`)
-    style = `\n  <style>@media (prefers-color-scheme: dark){${rules.join('')}}</style>`
+    css += `@media (prefers-color-scheme: dark){${rules.join('')}}`
   }
+  const style = css ? `\n  <style>${css}</style>` : ''
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${d.width}" height="${d.height}" viewBox="0 0 ${d.width} ${d.height}" role="img" aria-labelledby="title desc">
   <title id="title">${xml(name)} — Architecture</title>
   <desc id="desc">${xml(d.summary)}</desc>${style}
@@ -372,13 +393,26 @@ async function png(text, fontDir, systemFonts) {
   return new Resvg(text, { fitTo: { mode: 'zoom', value: 2 }, font: { fontFiles: files, loadSystemFonts: useSystem || files.length === 0, defaultFontFamily: 'Geist' } }).render().asPng()
 }
 
+async function embeddedFonts(fontDir) {
+  const faces = [['Geist-Regular.ttf', 400], ['Geist-SemiBold.ttf', 600]]
+  const rules = []
+  for (const [file, weight] of faces) {
+    if (!existsSync(join(fontDir, file))) {
+      console.warn(`warning: --embed-fonts could not find ${file} in ${fontDir}; the SVG falls back to the installed fonts`)
+      return ''
+    }
+    rules.push(`@font-face{font-family:Geist;font-weight:${weight};src:url(data:font/ttf;base64,${(await readFile(join(fontDir, file))).toString('base64')}) format("truetype")}`)
+  }
+  return rules.join('')
+}
+
 // ---- CLI
 const args = process.argv.slice(2)
 const flag = (name) => args.includes(name)
 const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined)
 const input = args.find((a, i) => !a.startsWith('--') && !['--out', '--title', '--font-dir', '--theme'].includes(args[i - 1]))
 if (!input || flag('--help')) {
-  console.log('Usage: node render.mjs <diagram.json> [--out <file.svg>] [--png] [--theme sage|blue|mono] [--dark | --both | --auto] [--title <name>] [--font-dir <dir>] [--no-system-fonts] [--check]')
+  console.log('Usage: node render.mjs <diagram.json> [--out <file.svg>] [--png] [--theme sage|blue|mono] [--dark | --both | --auto] [--title <name>] [--font-dir <dir>] [--no-system-fonts] [--embed-fonts] [--check] [--strict]')
   process.exit(input ? 0 : 1)
 }
 
@@ -397,7 +431,7 @@ if (errors.length) process.exit(1)
 if (flag('--check')) {
   for (const b of boxes) console.log('  ' + b.id + ': x ' + Math.round(b.x0) + '–' + Math.round(b.x0 + b.w) + ', y ' + Math.round(b.y0) + '–' + Math.round(b.y0 + b.h) + ' (' + Math.round(b.w) + '×' + b.h + ')')
   console.log(warnings.length ? `${warnings.length} warning(s).` : 'No problems found.')
-  process.exit(0)
+  process.exit(flag('--strict') && warnings.length ? 1 : 0)
 }
 
 if (option('--theme')) diagram.theme = option('--theme')
@@ -414,14 +448,18 @@ const name = option('--title') ?? diagram.title ?? basename(input, extname(input
 const base = resolve(option('--out') ?? `${input.replace(/\.json$/i, '')}.svg`).replace(/\.svg$/i, '')
 const fontDir = resolve(option('--font-dir') ?? join(here, '..', 'fonts'))
 const targets = flag('--both') ? [['light', `${base}.svg`], ['dark', `${base}-dark.svg`]] : flag('--dark') ? [['dark', option('--out') ? `${base}.svg` : `${base}-dark.svg`]] : [['light', `${base}.svg`]]
+// --embed-fonts puts the Geist files into the SVG as @font-face data, so a browser draws the text the width the boxes
+// were measured for even where Geist isn't installed. It adds about 340 KB to each SVG; the PNG doesn't need it.
+const fontCss = flag('--embed-fonts') ? await embeddedFonts(fontDir) : ''
 for (const [mode, out] of targets) {
-  const text = svg(name, diagram, mode, flag('--auto'))
+  const text = svg(name, diagram, mode, flag('--auto'), fontCss)
   await writeFile(out, text)
   console.log(`Wrote ${out}`)
   if (flag('--png')) {
     const pngPath = out.replace(/\.svg$/i, '') + '.png'
-    await writeFile(pngPath, await png(text, fontDir, !flag('--no-system-fonts')))
+    await writeFile(pngPath, await png(svg(name, diagram, mode, flag('--auto')), fontDir, !flag('--no-system-fonts')))
     console.log(`Wrote ${pngPath} (2x)`)
   }
 }
 if (warnings.length) console.log(`${warnings.length} warning(s): look at the picture before you keep it.`)
+if (flag('--strict') && warnings.length) process.exitCode = 1

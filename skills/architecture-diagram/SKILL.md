@@ -8,13 +8,15 @@ description: Turn a project's architecture (a Mermaid block in a README, a scree
 You describe the system as boxes and arrows in `diagram.json`; `scripts/render.mjs` computes box sizes and line routes and draws a standalone SVG (and optionally a 2x PNG). Nothing is drawn by hand and no colors are chosen: boxes only pick a `tone`.
 
 ```
-node <this skill's folder>/scripts/render.mjs <diagram.json> [--png] [--dark | --both | --auto] [--check] [--out <file.svg>] [--theme sage|blue|mono] [--title <name>]
+node <this skill's folder>/scripts/render.mjs <diagram.json> [--png] [--dark | --both | --auto] [--check] [--strict] [--embed-fonts] [--out <file.svg>] [--theme sage|blue|mono] [--title <name>]
 ```
 
 - The SVG needs no dependencies.
 - The script runs from any folder. Only `--png` cares where you are: it needs `@resvg/resvg-js`, looked up from the folder you run the command in (`npm i -D @resvg/resvg-js` there). The PNG uses the Geist fonts in `fonts/`. If the text has Hangul, kana or Han characters, it also picks a system sans font (Malgun Gothic, Yu Gothic, Apple SD Gothic Neo or Noto Sans CJK); bold may not apply to those characters. `--font-dir <dir>` adds your own `.ttf` files, and `--no-system-fonts` makes the PNG identical on every machine.
 - `--dark` draws the dark palette (`<name>-dark.svg`); `--both` writes the light and the dark file; `--auto` writes one SVG that follows the OS light/dark setting (its PNG is the light one; not combinable with the other two).
 - `--check` validates, prints every box's bounds (use them to place neighbors) and the warnings, and writes nothing.
+- `--strict` makes the exit code 1 when there are warnings (notes don't count), so a script or CI job can stop on them. Without it the exit code is 0 even with warnings. With `--check` nothing is written; without `--check` the files are still written, so you can look at them.
+- `--embed-fonts` puts the Geist fonts into the SVG as data (about 340 KB more per file), so a browser draws the text at the width the boxes were measured for even where Geist isn't installed. Use it for SVGs that go straight into a README or a page; leave it out when file size matters. The PNG never needs it.
 
 ## 1. Read the source
 
@@ -54,6 +56,23 @@ When two arrows between the same pair would carry different labels, merge them a
 `summary` is one sentence, two at most (about 35 words total), telling the flow in words. It is stored with the diagram and used as its description for screen readers. Write plainly; no marketing words.
 
 **Language of the text:** English by default. If the project's README and public docs are written in another language, use that for every `title`, `note`, `label` and the `summary` (a Korean Mermaid next to an English README still means English). Box widths are measured for Hangul/CJK too.
+
+### What this format is not for
+
+It draws *logical* architecture: what talks to what. It does not draw infrastructure topology where containment is the point (region → VPC → availability zone → subnet, CIDR ranges, security groups) or where official cloud icons carry the meaning. If the user hands you such a picture, say so, and offer the logical view (the services and how they connect) instead of merging two availability zones into one box or faking nested subnets with frames. Draw it only if they ask for the logical view or accept that subnets and icons are lost.
+
+### When the system is too big for one picture
+
+Merging only works when the pieces really are alike. If getting to seven would join boxes with different jobs (a shop with 30 services, a platform with several teams' domains), don't. A 30-box picture can't be routed cleanly by hand, and a 7-box one that says `Core services` says nothing. Draw a set instead:
+
+1. **One overview**, `docs/architecture.json`, in 5–7 boxes where each box is a *domain* (`Checkout`, `Catalog`, `Identity`, `Data platform`), not a service. Use a `groups` frame only for what runs in one place. Apply the merge rules above to the domains. Cross-domain arrows live only here.
+2. **One detail diagram per domain that is worth it**, `docs/architecture-<domain>.json`, again 5–7 boxes: that domain's own services and stores as `main`, plus each neighbor it talks to as **one** `outside` box named exactly as in the overview (`Identity`, not `Auth service` and `Token store`), with the same arrow label. Apply the rules above inside the domain too.
+3. **How to cut:** along ownership or deployment boundaries first, then along data flow (ingest, process, serve). Not by technology layer (all databases in one picture) unless the code is organized that way. Every service is a `main` box in exactly one detail diagram.
+4. **Keep it to a handful.** At most five detail diagrams. If there are more domains, draw the five that carry the most traffic or change the most, and **ask the user which others they want**. Name what you left out.
+5. Same names everywhere: a box title in the overview and in its detail diagram are identical, so a reader can follow it. In the README put the overview first and each detail under a heading with the domain's name.
+6. Render each file on its own with `--check --strict` until all exit 0. In the hand-over list each diagram with the domains it covers, which services went into which, and what was dropped.
+
+Never raise `width`, shrink the boxes or leave warnings in to fit more boxes into one picture.
 
 ## 3. Write `diagram.json`
 
@@ -112,17 +131,17 @@ The route is chosen for you: `h` when the two boxes overlap vertically, `v` when
 
 ## 4. Render and look
 
-1. `node <skill>/scripts/render.mjs docs/architecture.json --png`. The script **stops on errors** (an edge to a box that doesn't exist, a bad route, missing fields) and **prints warnings**: a box cut off by the canvas, overlapping boxes, a box crossing a group's edge or covering its title, a line passing through a box (including its own start or end box, which means it left or arrived on the wrong side), a line leaving the canvas, a label touching a box or another label. A label across a group's border is only a *note*: it is often fine, look at it.
+1. `node <skill>/scripts/render.mjs docs/architecture.json --png --strict`. The script **stops on errors** (an edge to a box that doesn't exist, a bad route, missing fields) and **prints warnings**: a box cut off by the canvas, overlapping boxes, a box crossing a group's edge, covering its title or sitting less than 8 from the frame, a line running through a group's title, a line passing through a box (including its own start or end box, which means it left or arrived on the wrong side), two lines running along the same stretch (they look like one line; give one a different `route`, `bend` or `offset`), a line leaving the canvas, a label touching a box or another label. With `--strict` the exit code is 1 while any warning is left. A label across a group's border is only a *note*: it is often fine, look at it.
 2. **Open the PNG (or the SVG) and look at it.** Warnings don't catch everything, and nothing checks which way an arrowhead points. Check that every arrowhead is visible and sits on a box edge (both ends for `both`), that two lines don't meet at one point, that the labels are on the right lines, and that the picture reads left to right without a legend. For Hangul/CJK text, check for empty boxes in place of letters.
-3. Fix and render again until there are no warnings and the picture is clean.
+3. Fix and render again until the command exits 0 with no warnings and the picture is clean.
 
 ## 5. Hand over
 
-Tell the user where the JSON, SVG and PNG are, which boxes you merged or dropped, and anything you couldn't verify. If it's for a README, render with `--both` and add a `<picture>` so GitHub shows the file that matches the reader's theme: `<picture><source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.svg"><img src="docs/architecture.svg" alt="Architecture"></picture>`. Use `--auto` instead only when the SVG is opened on its own or inlined on a page without its own light/dark toggle (an `<img>` follows the OS, not a site's switch). If the user's site renders this JSON format, put the JSON (without `title`) where they say. Don't commit or push unless the user asked.
+Tell the user where the JSON, SVG and PNG are, which boxes you merged or dropped, and anything you couldn't verify. If it's for a README, render with `--both --embed-fonts` and add a `<picture>` so GitHub shows the file that matches the reader's theme: `<picture><source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.svg"><img src="docs/architecture.svg" alt="Architecture"></picture>`. Use `--auto` instead only when the SVG is opened on its own or inlined on a page without its own light/dark toggle (an `<img>` follows the OS, not a site's switch). If the user's site renders this JSON format, put the JSON (without `title`) where they say. Don't commit or push unless the user asked.
 
 ## Don't
 
 - Don't paste the old Mermaid or an image in place of the diagram.
 - Don't set colors per box or per line; pick `tone`. For another look use `"theme": "blue"` (or another theme), or override single palette entries once with a top-level `"colors"` object (`"colorsDark"` for the dark palette; same keys as the script's palette).
 - Don't draw a component you haven't seen in the code or docs, unless you say it's from the source only.
-- Don't crowd more than about seven boxes into one diagram. Split it, or merge boxes.
+- Don't crowd more than about seven boxes into one diagram. Merge boxes that are alike, or split a big system into an overview and per-domain diagrams (see "When the system is too big for one picture").

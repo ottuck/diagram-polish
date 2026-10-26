@@ -34,6 +34,7 @@ Mermaid is quick to write and rarely nice to look at: the layout is whatever the
 - **It simplifies.** Ten or fourteen nodes become five to seven boxes: pieces of one codebase are merged, duplicate arrows are joined, labels shrink to a word or two. It checks the code first, so nothing is drawn that doesn't exist.
 - **It gives every diagram the same look.** Soft boxes, a dashed frame for what runs together, a different tone for services you don't run, dashed lines for scheduled or asynchronous work. Pick one of three themes, each with a dark variant. Hangul and CJK text work too.
 - **It checks its own drawing.** The script stops on mistakes and warns about cut-off boxes, overlaps, lines through boxes and colliding labels. Claude then looks at the picture before handing it over.
+- **It splits big systems instead of cramming them.** A picture holds five to seven boxes. A large platform becomes one overview of domains plus a detail diagram for each domain that matters, with matching names, so each picture stays readable.
 - **Plain files in, plain files out.** The diagram is a small `diagram.json`; the script writes a standalone SVG (no dependencies) and, if you want, a 2x PNG.
 
 ## Install
@@ -51,9 +52,10 @@ Start a new session, then ask: *"turn the Mermaid in the README into an architec
 node skills/architecture-diagram/scripts/render.mjs diagram.json          # diagram.svg
 node skills/architecture-diagram/scripts/render.mjs diagram.json --png    # + diagram.png (npm i -D @resvg/resvg-js)
 node skills/architecture-diagram/scripts/render.mjs diagram.json --check  # validate, list box bounds, warnings
+node skills/architecture-diagram/scripts/render.mjs diagram.json --check --strict  # same, exit code 1 on any warning (for CI)
 ```
 
-Options: `--theme sage|blue|mono`, `--dark`, `--both`, `--auto` (see Dark mode), `--out`, `--title`, `--font-dir`, `--no-system-fonts`. The rules, the JSON format and what every field does are in [`SKILL.md`](skills/architecture-diagram/SKILL.md); [`starter.json`](skills/architecture-diagram/examples/starter.json) is a minimal file and [`diagram.schema.json`](skills/architecture-diagram/diagram.schema.json) a schema for your editor.
+Options: `--theme sage|blue|mono`, `--dark`, `--both`, `--auto` (see Dark mode), `--strict`, `--embed-fonts`, `--out`, `--title`, `--font-dir`, `--no-system-fonts`. The rules, the JSON format and what every field does are in [`SKILL.md`](skills/architecture-diagram/SKILL.md); [`starter.json`](skills/architecture-diagram/examples/starter.json) is a minimal file and [`diagram.schema.json`](skills/architecture-diagram/diagram.schema.json) a schema for your editor.
 
 ## Themes
 
@@ -82,9 +84,22 @@ Every theme has a dark palette. `--dark` draws it as `diagram-dark.svg`; `--both
 
 [`examples/from-mermaid`](skills/architecture-diagram/examples/from-mermaid) has six Mermaid sources with the diagram made from each: a Korean one, a 14-node shop merged down to seven boxes, a Supabase and Next.js app, a Unity WebGL game embedded in a web app, a login flow written as a *sequence* diagram (in the blue theme), and the pipeline above. [`examples/`](skills/architecture-diagram/examples) has six more, from the author's own projects.
 
+## Limits: how big a system can be
+
+The script doesn't lay out boxes or route lines. Claude picks every coordinate, so the picture is only as clean as that hand placement, and the checks (lines through boxes, two lines on the same path, `--strict`) catch mistakes but don't fix them. This sets the policy:
+
+- **One picture holds about seven boxes.** That is what the rules and the examples are built for. A trial with 30 boxes and 41 lines in a single picture gave 43 warnings and an unreadable result.
+- **A larger system is drawn as a set:** one overview of domains plus up to five detail diagrams, each again five to seven boxes. That covers roughly a few dozen components. Names must match between overview and detail; Claude is told to do that, but nothing checks it yet.
+- **Past that, this is the wrong tool.** A platform with hundreds of services, or a diagram that must stay in sync with a model, needs a tool with automatic layout and one model behind many views. Claude will say what it left out and ask which domains you want, rather than cram them in.
+- **Infrastructure topology is out of scope.** Network diagrams where containment is the point (region, VPC, availability zone, subnet with its CIDR, security groups) and where official cloud icons carry the meaning don't fit: groups are flat frames, every box looks alike, and the rules would merge the two availability zones into one box, which removes what the diagram is for. A trial of a two-zone AWS layout with 15 boxes drew, but without subnets, icons or the usual color coding of traffic. This tool is for logical architecture: what talks to what.
+- **Not planned:** automatic layout or routing. It would cost the "SVG with no dependencies" property. A cross-diagram check of box names is the most likely next step.
+
+These limits come from trial drawings and the rules in [`SKILL.md`](skills/architecture-diagram/SKILL.md); the overview-plus-detail flow itself hasn't been run on a real large repository yet.
+
 ## Notes
 
-- Box widths are estimated for Geist, which the PNG uses. In the PNG, Hangul and CJK text uses a system sans font (Malgun Gothic, Yu Gothic, Apple SD Gothic Neo or Noto Sans CJK) and bold may not apply to it.
+- Box widths are estimated for Geist, which the PNG uses. An SVG doesn't carry fonts: on a machine without Geist the browser draws Arial or similar, a little wider. `--embed-fonts` adds Geist to the SVG (about 340 KB per file) so it looks the same everywhere.
+- In the PNG, Hangul and CJK text uses a system sans font (Malgun Gothic, Yu Gothic, Apple SD Gothic Neo or Noto Sans CJK) and bold may not apply to it.
 - The two "before" images are `@mermaid-js/mermaid-cli` 10.9 and 12.0 with their default themes. Mermaid's look and layout change between versions and hosts; the point holds in all of them.
 
 ## License

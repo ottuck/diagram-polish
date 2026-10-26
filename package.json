@@ -6,6 +6,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "test": "node --test",
     "examples": "node tools/render-examples.mjs",
     "check": "node tools/render-examples.mjs --check"
   },
