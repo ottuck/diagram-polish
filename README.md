@@ -31,10 +31,10 @@ The newer look of the current Mermaid CLI:
 
 Mermaid is quick to write and rarely nice to look at: the layout is whatever the engine picks, labels sit in gray patches, and no two diagrams match. Give Claude the Mermaid, a description, or just the repo, and this skill redraws it.
 
-- **It simplifies.** Ten or fourteen nodes become five to seven boxes: pieces of one codebase are merged, duplicate arrows are joined, labels shrink to a word or two. It checks the code first, so nothing is drawn that doesn't exist.
+- **It simplifies.** Ten or fourteen nodes become five to seven boxes (up to twelve when the system is tree-like and stays clean): pieces of one codebase are merged, duplicate arrows are joined, labels shrink to a word or two. It checks the code first, so nothing is drawn that doesn't exist.
 - **It gives every diagram the same look.** Soft boxes, a dashed frame for what runs together, a different tone for services you don't run, dashed lines for scheduled or asynchronous work. Pick one of three themes, each with a dark variant. Hangul and CJK text work too.
 - **It checks its own drawing.** The script stops on mistakes and warns about cut-off boxes, overlaps, lines through boxes and colliding labels. Claude then looks at the picture before handing it over.
-- **It splits big systems instead of cramming them.** A picture holds five to seven boxes. A large platform becomes one overview of domains plus a detail diagram for each domain that matters, with matching names, so each picture stays readable.
+- **It splits big systems instead of cramming them.** A picture holds five to seven boxes, up to twelve when the layout stays clean. A large platform becomes one overview of domains plus a detail diagram for each domain that matters, with matching names, so each picture stays readable.
 - **Plain files in, plain files out.** The diagram is a small `diagram.json`; the script writes a standalone SVG (no dependencies) and, if you want, a 2x PNG.
 
 ## Install
@@ -88,7 +88,7 @@ Every theme has a dark palette. `--dark` draws it as `diagram-dark.svg`; `--both
 
 The script doesn't lay out boxes or route lines. Claude picks every coordinate, so the picture is only as clean as that hand placement, and the checks (lines through boxes, two lines on the same path, `--strict`) catch mistakes but don't fix them. This sets the policy:
 
-- **One picture holds about seven boxes.** That is what the rules and the examples are built for. A trial with 30 boxes and 41 lines in a single picture gave 43 warnings and an unreadable result.
+- **One picture holds five to seven boxes, up to twelve if it is tree-like.** Five to seven is what the rules and most examples are built for. A system with one hub or one flow can keep 8–12 boxes on a canvas up to 1280 wide, as long as `--strict` passes and no lines cross. The cost is smaller text: shown 860px wide, 12px notes come out around 8px. A trial with 30 boxes and 41 lines in a single picture gave 43 warnings and an unreadable result, so anything past twelve is drawn as a set.
 - **A larger system is drawn as a set:** one overview of domains plus up to five detail diagrams, each again five to seven boxes. That covers roughly a few dozen components. Names must match between overview and detail; Claude is told to do that, but nothing checks it yet.
 - **Past that, this is the wrong tool.** A platform with hundreds of services, or a diagram that must stay in sync with a model, needs a tool with automatic layout and one model behind many views. Claude will say what it left out and ask which domains you want, rather than cram them in.
 - **Infrastructure topology is out of scope.** Network diagrams where containment is the point (region, VPC, availability zone, subnet with its CIDR, security groups) and where official cloud icons carry the meaning don't fit: groups are flat frames, every box looks alike, and the rules would merge the two availability zones into one box, which removes what the diagram is for. A trial of a two-zone AWS layout with 15 boxes drew, but without subnets, icons or the usual color coding of traffic. This tool is for logical architecture: what talks to what.

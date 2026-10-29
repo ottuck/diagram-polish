@@ -28,11 +28,11 @@ node <this skill's folder>/scripts/render.mjs <diagram.json> [--png] [--dark | -
 - **Sequence diagrams** are ordered in time and this format has no time axis. Keep who talks to whom, fold each request and its response into one `both: true` arrow, shorten the messages into a label of 1–3 words, and tell the user the order was dropped. A person who only starts and ends the story becomes an `accent` box.
 - Look at one or two of `examples/` for style. Don't copy a diagram that merely resembles yours.
 
-## 2. Reduce it to 5–7 boxes
+## 2. Reduce it to 5–7 boxes (up to 12 if it stays clean)
 
-People and outside services count toward the 5–7; group frames don't.
+People and outside services count toward the number of boxes; group frames don't.
 
-Merge in this order until you're in range. If the source is already in 5–7, don't merge at all, even where a rule below would apply:
+Merge in this order until you're in 5–7. If the source is already in 5–7, don't merge at all, even where a rule below would apply:
 
 1. Pieces that ship from one codebase: iOS app + web app → `Expo app`, note `iPhone · web`.
 2. Several services of one vendor, or things at the same stage: Kinesis + Lambda → `Event stream`, note `Kinesis · Lambda`; Auth + DB of one backend platform → one box.
@@ -41,6 +41,15 @@ Merge in this order until you're in range. If the source is already in 5–7, do
 5. Still over? Fold a lone person or trigger that has one arrow into a neighbor's note or into `summary` ("for analysts"). Drop details that don't change the story (health checks, a CDN).
 
 When two arrows between the same pair would carry different labels, merge them and use a combined label (`RPC`), or keep the more important one. **Tell the user which boxes you merged or dropped.**
+
+**Still over seven, and the next merge would join boxes with different jobs?** Stop merging and keep **8–12 boxes**, but only when all of these hold. Otherwise merge further, or draw a set (next section):
+
+- The graph is tree-like: one hub, or one left-to-right flow with branches, and at most one more line than there are boxes. That is what lets you place every box so no line crosses another.
+- `--check --strict` exits 0 and the PNG shows no crossing lines, no label pill that hides an arrowhead (give a labeled line a gap wider than its pill), and every arrowhead visible.
+- `width` is at most 1280 and `height` at most 480. At that width a README scales the picture down (860px wide makes 12px notes about 8px), so go this wide only when the extra boxes are worth it.
+- You tell the user the picture is above the usual range and which merge you skipped, and why.
+
+More than 12 boxes is always a set.
 
 | Rule | Example |
 | --- | --- |
@@ -63,7 +72,7 @@ It draws *logical* architecture: what talks to what. It does not draw infrastruc
 
 ### When the system is too big for one picture
 
-Merging only works when the pieces really are alike. If getting to seven would join boxes with different jobs (a shop with 30 services, a platform with several teams' domains), don't. A 30-box picture can't be routed cleanly by hand, and a 7-box one that says `Core services` says nothing. Draw a set instead:
+Merging only works when the pieces really are alike. If getting to twelve would still join boxes with different jobs, or the graph is not tree-like enough to route by hand (a shop with 30 services, a platform with several teams' domains), don't. A 30-box picture can't be routed cleanly by hand, and a 7-box one that says `Core services` says nothing. Draw a set instead:
 
 1. **One overview**, `docs/architecture.json`, in 5–7 boxes where each box is a *domain* (`Checkout`, `Catalog`, `Identity`, `Data platform`), not a service. Use a `groups` frame only for what runs in one place. Apply the merge rules above to the domains. Cross-domain arrows live only here.
 2. **One detail diagram per domain that is worth it**, `docs/architecture-<domain>.json`, again 5–7 boxes: that domain's own services and stores as `main`, plus each neighbor it talks to as **one** `outside` box named exactly as in the overview (`Identity`, not `Auth service` and `Token store`), with the same arrow label. Apply the rules above inside the domain too.
@@ -72,7 +81,7 @@ Merging only works when the pieces really are alike. If getting to seven would j
 5. Same names everywhere: a box title in the overview and in its detail diagram are identical, so a reader can follow it. In the README put the overview first and each detail under a heading with the domain's name.
 6. Render each file on its own with `--check --strict` until all exit 0. In the hand-over list each diagram with the domains it covers, which services went into which, and what was dropped.
 
-Never raise `width`, shrink the boxes or leave warnings in to fit more boxes into one picture.
+Never shrink the boxes or leave warnings in to fit more boxes into one picture. `width` goes past about 1080 only in the 8–12 box case above, and never past 1280.
 
 ## 3. Write `diagram.json`
 
@@ -101,7 +110,7 @@ Put it where the project keeps docs (for example `docs/architecture.json`); the 
 
 ### Canvas and boxes
 - `"theme"` picks the palette: `sage` (green and sand, the default), `blue` (cool blue and slate), or `mono` (graphite grays, good for print and for docs that already have a color scheme). Each has a dark variant. Keep the default unless the user asks for another look or the project's own colors point to one.
-- Coordinates are SVG pixels. `width` is usually 1000–1080; `height` 360–420, or up to about 480 for three rows.
+- Coordinates are SVG pixels. `width` is usually 1000–1080 (up to 1280 for 8–12 boxes); `height` 360–420, or up to about 480 for three rows.
 - A node's `x`, `y` is the **center** of its box. Height is 68 with a `note` and 52 without. **Width is computed:** `max(120, widest text) + 40`, where text width is about 6.6 per character for the note (12px) and 8.7 for the title (15px bold; capitals and digits are wider). `Polygon · Ethereum · Avalanche` (30 characters) gives about 240. It's an estimate: run `--check` to read the real bounds before you place neighbors.
 - Keep every box at least 20 from the canvas edge (`x + width/2 <= canvas width - 20` for the right-most). Raise `width` or move the node if it is cut off.
 - Columns 300–400 apart and rows about 150 apart. Let the flow run left to right; put outside services at the top, bottom or far right.
@@ -144,4 +153,4 @@ Tell the user where the JSON, SVG and PNG are, which boxes you merged or dropped
 - Don't paste the old Mermaid or an image in place of the diagram.
 - Don't set colors per box or per line; pick `tone`. For another look use `"theme": "blue"` (or another theme), or override single palette entries once with a top-level `"colors"` object (`"colorsDark"` for the dark palette; same keys as the script's palette).
 - Don't draw a component you haven't seen in the code or docs, unless you say it's from the source only.
-- Don't crowd more than about seven boxes into one diagram. Merge boxes that are alike, or split a big system into an overview and per-domain diagrams (see "When the system is too big for one picture").
+- Don't crowd more than seven boxes into one diagram unless the 8–12 conditions in section 2 all hold, and never more than twelve. Merge boxes that are alike, or split a big system into an overview and per-domain diagrams (see "When the system is too big for one picture").
